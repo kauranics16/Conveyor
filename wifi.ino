@@ -1,7 +1,7 @@
 void WifiConfig(){
   preferences.begin("mywifi", true);
-   storedSSID = preferences.getString("ssid", "");
-   storedPass = preferences.getString("password", "");
+   String storedSSID = preferences.getString("ssid", "");
+   String storedPass = preferences.getString("password", "");
   preferences.end();
   if (storedSSID != "") {
     Serial.println("Attempting to connect to: " + storedSSID);

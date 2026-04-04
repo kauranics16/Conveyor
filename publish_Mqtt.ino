@@ -1,8 +1,8 @@
 void MqttReconnectCheck(){
   // Loop until we're reconnected
   
-  if (!mqtt_client.connected() && millis()- lastmqttcheck > 2000) {
-    lastmqttcheck = millis();
+  if (!mqtt_client.connected() && millis()- LastMqttCheck > 2000) {
+    LastMqttCheck = millis();
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
     // test.mosquitto.org does not require username/password
@@ -25,15 +25,15 @@ void MqttReconnectCheck(){
 
 
 
-void MqttPublish_data(){
+void MqttPublish_data(uint8_t *shiftcount,uint8_t *storedSensorproxicounteronoffd ){
    //long now = millis();
      // Serial.println("----------------------------------------------------------------+");
   while (millis() - lastMsg > 2000) {
     lastMsg = millis();
-    value++;
+    CommomCountvalue++;
     Serial.println("----------------------------------------------------------------+");
     char msg[50];
-    snprintf (msg, 50, "hello world #%d", value);
+    snprintf (msg, 50, "hello world #%d", CommomCountvalue);
      //Serial.println("----------------------------------------------------------------+");
     // Publish a message to a topic
     mqtt_client.publish("esp32/test/kinjal_mqtt_topic", msg);
@@ -70,33 +70,35 @@ void MqttPublish_data(){
     
 
 
-    preferences.begin("sensor", true);
-    String storedInput1 = preferences.getString("InputSensor_1", "");//	getChar(const char* key, const int8_t defaultValue)
-    String storedInput2 = preferences.getString("InputSensor_2", "");
-    String storedInput1Mode=preferences.getString("Sensor_1mode", "");
-    String storedInput2Mode=preferences.getString("Sensor_2mode", "");
+    //preferences.begin("sensor", true);
+    //String storedInput1 = preferences.getString("InputSensor_1", "");//	getChar(const char* key, const int8_t defaultValue)
+    //String storedInput2 = preferences.getString("InputSensor_2", "");
+    //String storedInput1Mode=preferences.getString("Sensor_1mode", "");
+   // String storedInput2Mode=preferences.getString("Sensor_2mode", "");
     //uint8_t storedsensor1offon=preferences.getInt("Sensor1onoff",0);
     //uint8_t storedsensor2offon=preferences.getInt("Sensor2onoff", 0);
     //uint8_t storedSensor1nonc=preferences.getInt("Sensor1nonc", 0);
     //uint8_t storedSensor2nonc=preferences.getInt("Sensor2nonc", 0);
     //uint8_t storedSensorShiftchoise=preferences.getString("Sensorshift", "");
-    uint8_t storedSensorproxicounteronoff=preferences.getInt("proxionoff", 0);
-    int storedSensor_timedifference = preferences.getInt("proxi_time",0);//getInt(const char* key, const int32_t defaultValue)
-    String storedOutputonoff=preferences.getString("Outputonoff", "");
-    preferences.end();
+    //uint8_t storedSensorproxicounteronoff=preferences.getInt("proxionoff", 0);
+    //int storedSensor_timedifference = preferences.getInt("proxi_time",0);//getInt(const char* key, const int32_t defaultValue)
+    //String storedOutputonoff=preferences.getString("Outputonoff", "");
+   // preferences.end();
+
    // DynamicJsonDocument doc(1024);or
     Serial.println(storedInput1);
     Serial.println(storedInput2);
-    Serial.println(storedInput1Mode);
-    Serial.println(storedInput2Mode);
+   // Serial.println(storedInput1Mode);
+    //Serial.println(storedInput2Mode);
     Serial.println(storedsensor1offon);
     Serial.println(storedsensor2offon);
     Serial.println(storedSensorShiftchoise);
-    Serial.println(storedSensorproxicounteronoff);
+    Serial.println(*storedSensorproxicounteronoffd);
     Serial.println(storedSensor_timedifference);
     Serial.println(storedOutputonoff);
-    
-
+    Serial.println(storedSensorIndividualAcceptTimeselect);
+    Serial.println(storedSensorIndividualAcceptTimeinput);
+    Serial.println(storedSensorDiffOutputAlerton);
     /*JsonDocument doc;
     doc[storedInput1] = 0;
     doc[storedInput2] = 0;
@@ -108,7 +110,7 @@ void MqttPublish_data(){
     
     
 
-    if (storedSensorproxicounteronoff == 1){
+    if (*storedSensorproxicounteronoffd == 1){
 
       if (storedsensor1offon == 1 && storedsensor2offon == 1){// if both sensors are on
       char msg2[50]; 
@@ -137,7 +139,7 @@ void MqttPublish_data(){
 
       else{
         char msg2[50]; 
-        snprintf ( msg2, 50, " {no sensor on %d}", value );
+        snprintf ( msg2, 50, " {no sensor on %d}", CommomCountvalue );
         mqtt_client.publish("kinjal/esp32/counter1", msg2);
         Serial.println(msg2);
 
@@ -152,11 +154,31 @@ void MqttPublish_data(){
       Serial.println(msg2);*/
     }
 
+
+
     if (storedSensorShiftchoise == 1){
+      rightshiftcount = true;
       SensorShiftRight();
+       
     }
     else{
+      //leftshiftcount = true;
       SensorShiftLeft();
+    }
+
+    if (*shiftcount == 1){
+       if(rightshiftcount == true){
+       char msg1[50];
+       snprintf(msg1, 50, "Proxi Counter: %d", proxi_counter);
+       mqtt_client.publish("kinjal/esp32/counter", msg1);
+       Serial.println(msg1);
+       }
+       else{
+        char msg1[50];
+        snprintf(msg1, 50, "Proxi Counter: %d", proxi_counter);
+        mqtt_client.publish("kinjal/esp32/counter", msg1);
+        Serial.println(msg1);
+       }
     }
     
 
