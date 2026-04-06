@@ -20,8 +20,8 @@ void WifiConfig(){
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("\nWiFi Failed. Starting AP Mode...");
     WiFi.mode(WIFI_AP); // Switch to pure AP mode
-    WiFi.softAP(ssid_ap, password_ap);
-    Serial.print("Connect to: "); Serial.println(ssid_ap);
+    WiFi.softAP(SSID_AP, PASSWORD_AP);
+    Serial.print("Connect to: "); Serial.println(SSID_AP);
     Serial.print("IP: "); Serial.println(WiFi.softAPIP());
   } 
   else {

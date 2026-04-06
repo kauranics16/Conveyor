@@ -62,8 +62,8 @@ void WebServerConfig(){
       String p = request->getParam("pass", true)->value();
       String InputSensor1 = request->getParam("input1", true)->value();
       String InputSensor2 = request->getParam("input2", true)->value();
-      String Sensor1_Mode = request->getParam("sensormode1", true)->value();
-      String Sensor2_Mode = request->getParam("sensormode2", true)->value();
+      String Sensor1Mode = request->getParam("sensormode1", true)->value();
+      String Sensor2Mode = request->getParam("sensormode2", true)->value();
       uint8_t Sensor1onoff = request->getParam("myGroup", true)->value().toInt();
       uint8_t Sensor2onoff = request->getParam("myGroup1", true)->value().toInt();
       uint8_t Sensor1nonc = request->getParam("myGroup2", true)->value().toInt();
@@ -71,7 +71,7 @@ void WebServerConfig(){
       uint8_t SensorShiftchoise = request->getParam("Shifting", true)->value().toInt();//from sensor1 to sensor2 or sensor2 to sensor1
       uint8_t proxicounteronoff = request->getParam("proxicounteronoff", true)->value().toInt();// choise to wherether to publish sensor individual count i.e sensor1 : 1 , sensor2 :2..
       uint8_t proxishiftcounteronoff = request->getParam("Shiftcount", true)->value().toInt();
-      uint8_t Sensor_timedifference= request->getParam("seconds", true)->value().toInt();
+      uint8_t Sensorusertimedifference= request->getParam("seconds", true)->value().toInt();
       String Outputonoff = request->getParam("onoff", true)->value();
       uint8_t SensorIndividualAcceptTimeselect = request->getParam("individual", true)->value().toInt();
       uint8_t SensorIndividualAcceptTimeinput = request->getParam("accepttime", true)->value().toInt();
@@ -88,7 +88,7 @@ void WebServerConfig(){
       Serial.println(SensorShiftchoise);
       Serial.println(proxicounteronoff);
       Serial.println(Outputonoff);
-      Serial.println(storedSensorIndividualAcceptTimeselect);
+      Serial.println(StoredSensorIndividualAcceptTimeUserInputInSeconds);
 
 
       //Serial.println(Sensor1_Mode);
@@ -97,8 +97,8 @@ void WebServerConfig(){
       preferences.begin("sensor", false);//store in preference
       preferences.putString("InputSensor_1", InputSensor1);
       preferences.putString("InputSensor_2",InputSensor2);
-      preferences.putString("Sensor_1mode", Sensor1_Mode);
-      preferences.putString("Sensor_2mode", Sensor2_Mode);
+      preferences.putString("Sensor_1mode", Sensor1Mode);
+      preferences.putString("Sensor_2mode", Sensor2Mode);
       preferences.putInt("Sensor1onoff", Sensor1onoff);
       preferences.putInt("Sensor2onoff", Sensor2onoff);
       preferences.putInt("Sensor1nonc", Sensor1nonc);
@@ -107,7 +107,7 @@ void WebServerConfig(){
       preferences.putInt("proxionoff", proxicounteronoff);
       preferences.putInt("Shiftcount", proxishiftcounteronoff);
       
-      preferences.putInt("proxi_time",Sensor_timedifference );
+      preferences.putInt("proxi_time",Sensorusertimedifference );
       preferences.putString("Outputonoff", Outputonoff);
       preferences.putInt("individual",SensorIndividualAcceptTimeselect);
       preferences.putInt("accepttime",SensorIndividualAcceptTimeinput);
@@ -124,7 +124,7 @@ void WebServerConfig(){
       request->send(200, "text/html", "<h3>Credentials Saved. Restarting...</h3>");
       Serial.println("+++++++++++++++++++++++++++++++++++++++++++++++");
      
-      shouldRestartESP = true; 
+      ShouldRestartESP = true; 
       //delay(5000);
       //ESP.restart();
     }
