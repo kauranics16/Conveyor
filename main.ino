@@ -1,12 +1,13 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <Preferences.h>
-#include <PubSubClient.h>
+#include <Preferences.h>// to store data or user input to esp32 memory for future use to retrieve data when needed
+#include <PubSubClient.h>//For Mqtt data publish
 //#include <ArduinoJson.h>
 
-#define PROX_SENSOR 6
-#define OUTPUT_PIN 10
+#define PROX_SENSOR1 6//pin 6 as Input of Esp32c3
+#define PROX_SENSOR2 7//pin 7 as Input of Esp32c3
+#define OUTPUT_PIN 10//pin 10 as Output of Esp32c3
 
 Preferences preferences;
 AsyncWebServer server(80);
@@ -16,75 +17,90 @@ AsyncWebServer server(80);
 
 
 WiFiClient espClient;
-PubSubClient MqttClient(espClient);
+PubSubClient mqttClient(espClient);//pack wifi client in mqtt client container
 
+
+//long time1 = 0;
+//long time2 = 0;
+//long timediff = 0;
 
 
 //sensor Global variables
-String StoredSensor1Name;
-String StoredSensor2Name;
+String storedSensor1Name;//user input Sensor1 name
+String storedSensor2Name;//user input Sensor2 name
 //String storedInput1Mode;
 //String storedInput1Mode;
-uint8_t StoredSensor1Offon;
-uint8_t StoredSensor2Offon;
+uint8_t storedSensor1OnChoice;//Whether the input choice is to "ON" the sensor1 or not
+uint8_t storedSensor2OnChoice;//Whether the input choice is to "ON" the sensor2 or not
 //uint8_t storedSensor1nonc;
 //uint8_t storedSensor2nonc;
-uint8_t StoredSensorShiftChoise;
-uint8_t StoredUserInputSensorsTimeDifferenceInSeconds;
-uint8_t StoredSensorIndividualTriggerOutputon;
-uint8_t StoredSensorDiffOutputAlerton;
-String StoredOutputONSetupChoise;
+uint8_t storedSensorShiftChoise;//Whether the user Input is Right Shift or Left Shift
+uint8_t storedUserInputSensorsTimeDifferenceInSeconds;//User INput Acceptable Time Difference between two sensor in seconds 
+uint8_t storedSensorIndividualTriggerOutputon;//User input of whether the user want the output on for few seconds when sensor detectes something
+uint8_t storedSensorDifferenceOutputAlerton;//User input of ALERT Output "ON" when the sensor Difference exceeds thr 
+String storedOutputONSetupChoise;//User Input of user Want Output ON or Not in Setup
+uint8_t storedSensorDifferenceAlertMqttPublish;//User input if user want to Publish the Alert message on Mqtt or Not
 
-bool RightShiftStatus = false;
+bool rightShiftStatus = false;//Whether User Inputed RightShift or LeftShift Choice Flag 
 //bool leftshiftcount = false;
 
-long LastMqttDataPublish = 0;
-long LastWifiCheck = 0;
-long LastMqttCheck = 0;
+unsigned long lastMqttDataPublish = 0;//Time line for Mqtt Data Publish 
+unsigned long lastWifiCheck = 0;//Time line for Wifi Data Publish
+unsigned long lastMqttCheck = 0;//Time line for Mqtt Reconnect in millis()
 
-int CommomMqttDataCountValue = 0;//common count for every mqtt publish data
-volatile int32_t ProxiCounterAfterBothSensorDetects = 0;  //for both proximity detects one object than counter increments
-volatile int32_t Sensor1ProxiCount = 0;
-volatile int32_t Sensor2ProxiCount = 0; 
-volatile bool Senson1Triggered = false;
-volatile bool Sensor2Triggered = false;
+unsigned int commomMqttDataCountValue = 0;//common count for every mqtt publish data
+volatile int32_t proxiCounterAfterBothSensorDetects = 0;  //for both proximity detects one object than counter increments
+volatile int32_t sensor1ProxiCount = 0;//Sensor1 Count to Publish when needed
+volatile int32_t sensor2ProxiCount = 0;//Sensor2 Count to Publish when needed
+volatile bool sensor1Triggered = false;//Sensor1 Detects Status
+volatile bool sensor2Triggered = false;//Sensor2 Detects Status
+
+volatile bool sensor1TriggeredAlert = false;//Sensor1 Detects Status for Alert
+volatile bool sensor2TriggeredAlert = false;//Sensor2 Detects Status for Alert
+unsigned long sensor1TimeWhenTriggeredAlert = 0;//
+unsigned long sensor2TimeWhenTriggeredAlert = 0;//
+unsigned long timeDifferenceAlert=0;//
+
 //volatile bool detected_proxi3 = false;// counter reset mode
-unsigned long Sensor1TimeWhenTriggered = 0;
-unsigned long Sensor2TimeWhenTriggered = 0;
-unsigned long TimeDifferenceBetweenSensors = 0;
-unsigned long lasttimedifftime = 0;
-//volatile bool WaitingForObjectDetectedSensor1=false;
+volatile bool sensor1TriggeredMqttPublishAlert = false;
+volatile bool sensor2TriggeredMqttPublishAlert = false;
+unsigned long sensor1TimeWhenTriggeredMqttPublish = 0;
+unsigned long sensor2TimeWhenTriggeredMqttPublish = 0;
+unsigned long timeDifferenceBetweenSensors = 0;
+//unsigned long lasttimedifftime = 0;
+//volatile bool waitingForObjectDetectedSensor1=false;
 
 
-unsigned long OutputStartTimeOnSensorTriggering = 0;//output on for few seconds when sensor detects 
-unsigned long OutputStartTimeOnReset = 0;//output for reset
-unsigned long OutputStartTimeSensorDifferenceAlert = 0;  //buzzer on timing for negative output
-bool OutputIsActiveForTriggering = false;
-bool OutputIsActiveForReset = false;
-bool OutputIsActiveForSensorDifferenceAlert = false;
+unsigned long outputStartTimeOnSensorTriggering = 0;//output on for few seconds when sensor detects 
+unsigned long outputStartTimeOnReset = 0;//output for reset
+unsigned long outputStartTimeSensorDifferenceAlert = 0;  //buzzer on timing for negative output
+unsigned long currentAlert = 0;
+bool outputIsActiveForTriggering = false;
+bool outputIsActiveForReset = false;
+bool outputIsActiveForSensorDifferenceAlert = false;
 //unsigned long outputStartResetTime = 0;
 //bool outputIsReset = false;
 
 // Individual acceptable times of sensor1 and sensor2 and outpput integration
-uint8_t StoredSensorIndividualAcceptTimeSelectAndOutputOn = 0;//select for whome they want to enter acceptable time and want output ON sensor1,sensor2 or reset 
-uint8_t StoredSensorIndividualAcceptTimeUserInputInSeconds = 0;// input from user the seconds they want for individual accept time
-unsigned long CurrentTimeForOutputSensor1 = 0;
-volatile bool WaitingForObjectDetectedSensor1 = false;
-long LastDetectedOutoutTimeSensor1 = 0;
-bool OutputStateForSensor1 = false;
-unsigned long TimeDifferenceSensor1 = 0;
+uint8_t storedSensorIndividualAcceptTimeSelectAndOutputOn = 0;//select for whome they want to enter acceptable time and want output ON sensor1,sensor2 or reset 
+uint8_t storedSensorIndividualAcceptTimeUserInputInSeconds = 0;// input from user the seconds they want for individual accept time
+unsigned long currentTimeForOutputSensor1 = 0;
+volatile bool waitingForObjectDetectedSensor1 = false;
+long lastDetectedOutoutTimeSensor1 = 0;
+bool outputStateForSensor1 = false;
+unsigned long timeDifferenceSensor1 = 0;
 
 
-unsigned long CurrentTimeForOutputSensor2 = 0;
-volatile bool WaitingForObjectDetectedSensor2 = false;
-long LastDetectedOutoutTimeSensor2 = 0;
-bool OutputStateForSensor2 = false;
-unsigned long TimeDifferenceSensor2 = 0;
+unsigned long currentTimeForOutputSensor2 = 0;
+volatile bool waitingForObjectDetectedSensor2 = false;
+long lastDetectedOutoutTimeSensor2 = 0;
+bool outputStateForSensor2 = false;
+unsigned long timeDifferenceSensor2 = 0;
 
-volatile bool WaitingForReset = false;// for reset output on function
+volatile bool waitingForReset = false;// for reset output on function
 
 
-bool ShouldRestartESP = false;  //used for esp restart input uis given through webserver
+bool shouldRestartESP = false;  //used for esp restart input uis given through webserver
 
 
 
@@ -97,21 +113,21 @@ void setup() {
   pinMode(7, INPUT_PULLUP);
 
 
-  ProximityConfig();  // configure the proximity and output ONOFF condition by user
-  Outputonoff();
+  proximityConfig();  // configure the proximity and output ONOFF condition by user
+  setupOutputOn();//
 
 
   // 2. Decide Connection Strategy
-  WifiConfig();
+  wifiConfig();
 
-  MqttClient.setServer("broker.emqx.io", 1883);
+  mqttClient.setServer("broker.emqx.io", 1883);
 
-  WebServerConfig();
+  webServerConfig();
 }
 
 void loop() {
-  // proximity_config();// configure the proximity
-  if (ShouldRestartESP == true) {
+  
+  if (shouldRestartESP == true) {
 
     //delay(5000);
     Serial.println("Restart!!!!, Disconnection.........................................................................");
@@ -120,23 +136,23 @@ void loop() {
     return;
   }
 
-  static bool IsFirstRun = true;
-  static uint8_t StoredUserInputProxiShiftCounterOn; // This stays "local" to the loop function
+  static bool isFirstRun = true;
+  static uint8_t storedUserInputProxiShiftCounterOn; // This stays "local" to the loop function
   //If you used a regular int, the variable would be reset/deleted every single time the loop finishes and restarts.
-  static uint8_t StoredUserInputSensorProxiJsonCounterOn;
-  if (IsFirstRun == true) {
+  static uint8_t storedUserInputSensorProxiJsonCounterOn;
+  if (isFirstRun == true) {
     preferences.begin("sensor", true);
-    StoredUserInputProxiShiftCounterOn = preferences.getInt("Shiftcount", 0);
-    StoredUserInputSensorProxiJsonCounterOn=preferences.getInt("proxionoff", 0);
+    storedUserInputProxiShiftCounterOn = preferences.getInt("Shiftcount", 0);
+    storedUserInputSensorProxiJsonCounterOn=preferences.getInt("proxionoff", 0);
     preferences.end();
     Serial.print("beiiiiiiiii ");
-    IsFirstRun = false;
+    isFirstRun = false;
   }
 
     // Now send that local value to other functions using a pointer
    //MqttPublish_data(&storedproxishiftcounteronoff);
 
-  if (millis() - LastWifiCheck > 5000) {
+  if (millis() - lastWifiCheck > 5000) {
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("wifi Diconneted");
       WiFi.reconnect();// make wifi previously connected
@@ -152,23 +168,23 @@ void loop() {
 
       //WiFi.begin(storedSSID.c_str(), storedPass.c_str());
     }
-    LastWifiCheck = millis();
+    lastWifiCheck = millis();
   }
 
 
-  if (!MqttClient.connected()) {
-    MqttReconnectCheck();
+  if (!mqttClient.connected()) {
+    mqttReconnectCheck();
     //Serial.println("mqttttttffffff");
   } else {
-    MqttClient.loop();
+    mqttClient.loop();
     // Serial.println("mqttttttffffff");
     //MqttPublish_data();
-    MqttPublish_data(&StoredUserInputProxiShiftCounterOn,&StoredUserInputSensorProxiJsonCounterOn);
+    mqttPublishData(&storedUserInputProxiShiftCounterOn,&storedUserInputSensorProxiJsonCounterOn);
     //Serial.println("----------------------------------------------------------------+");
   }
 
-  if(StoredSensorIndividualTriggerOutputon==1){
-    SensorTriggerOutputon();
+  if(storedSensorIndividualTriggerOutputon==1){
+    sensorTriggerOutputOn();
   }
 
  /*if (outputIsActiveNeg && (micros() - outputStartTimeNeg >= 500000)) {//nbuzzer 500 mili seconds
@@ -176,19 +192,20 @@ void loop() {
       outputIsActiveNeg = false;
       Serial.println("Output pin 10 turned OFF after 2 seconds.");
   }*/
-  if (StoredSensorIndividualAcceptTimeSelectAndOutputOn == 1) {  // for input of acceptable time for sensor 1
-    Sensor1AcceptableTime();
+  if (storedSensorIndividualAcceptTimeSelectAndOutputOn == 1) {  // for input of acceptable time for sensor 1
+    sensor1AcceptableTime();
   } 
-  else if (StoredSensorIndividualAcceptTimeSelectAndOutputOn == 2) {
-    Sensor2AcceptableTime();
+  else if (storedSensorIndividualAcceptTimeSelectAndOutputOn == 2) {
+    sensor2AcceptableTime();
   }
-  else if (StoredSensorIndividualAcceptTimeSelectAndOutputOn == 3) {
-    OutputOnReset();
+  else if (storedSensorIndividualAcceptTimeSelectAndOutputOn == 3) {
+    outputOnReset();
   }
-  else{
-    return;
+  
+  if (storedSensorDifferenceOutputAlerton == 1){
+       timeDiffAlertBetweenSensors();
   }
-
+  
   //if (storedSensorDiffOutputAlerton == 1){
   //  Serial.println("hhhhhhhhhhhhdddddddddd");
   //  TimeDiffAlertBetweenSensors();
@@ -197,6 +214,12 @@ void loop() {
   /*if (outputIsReset && (micros() - outputStartResetTime >= 500000)) {//nbuzzer 500 mili seconds
       digitalWrite(10, LOW);
       outputIsActiveNeg = false;
+      Serial.println("Output pin 10 turned OFF after 2 seconds.");
+  }*/
+  /*if (OutputIsActiveForSensorDifferenceAlert==true && (millis() - OutputStartTimeSensorDifferenceAlert >= 1000UL)) {//nbuzzer 500 mili seconds
+      Serial.println("checkinggggggggggggggg");
+      digitalWrite(OUTPUT_PIN, LOW);
+      OutputIsActiveForSensorDifferenceAlert = false;
       Serial.println("Output pin 10 turned OFF after 2 seconds.");
   }*/
 }

@@ -1,4 +1,4 @@
-void WifiConfig(){
+void wifiConfig(){
   preferences.begin("mywifi", true);
    String storedSSID = preferences.getString("ssid", "");
    String storedPass = preferences.getString("password", "");

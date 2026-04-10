@@ -1,6 +1,4 @@
 
-
-
 const char* htmlForm = R"rawliteral(
 <!DOCTYPE HTML><html><head>
  <title>Wi-Fi Setup</title>
@@ -8,19 +6,19 @@ const char* htmlForm = R"rawliteral(
 </head><body>
  <h2>Configure Wi-Fi</h2>
  <form action="/save" method="POST">
- InputSensor1:<br><input type="text" name="input1"><br>
+ InputSensor1 Name:<br><input type="text" name="input1"><br>
  <input type="radio"  name="myGroup" value=1> ON Sensor1
  <input type="radio"  name="myGroup" value=2> OFF Sensor1<br>
  <input type="radio"  name="myGroup2" value=1> NO
  <input type="radio"  name="myGroup2" value=2> NC<br>
- Sensor1 Mode:<br><input type="text" name="sensormode1"><br>
- InputSensor2:<br><input type="text" name="input2"><br>
+ Sensor1 Mode:<input type="text" name="sensormode1"><br>
+ InputSensor2 Name:<br><input type="text" name="input2"><br>
  <input type="radio"  name="myGroup1" value=1> ON Sensor2
  <input type="radio"  name="myGroup1" value=2> OFF Sensor2
  <input type="radio"  name="myGroup1" value=3> As Reset Button<br>
  <input type="radio"  name="myGroup3" value=1> NO
  <input type="radio"  name="myGroup3" value=2> NC<br>
- Sensor2 Mode:<br><input type="text" name="sensormode2"><br>
+ Sensor2 Mode:<input type="text" name="sensormode2"><br>
  Shift Choice: <input type="radio"  name="Shifting" value=1> Sensor1 to Sensor2 Right Shift
  <input type="radio"  name="Shifting" value=2> Sensor2 to Sensor1 Left Shift<br>
  Left Right Shift Count Choice: <input type="radio"  name="Shiftcount" value=1> ON
@@ -28,20 +26,22 @@ const char* htmlForm = R"rawliteral(
  Proximity Individual Counter: <input type="radio"  name="proxicounteronoff" value=1>ON
  <input type="radio"  name="proxicounteronoff" value=2>OFF<br>
  Input Acceptable Time in Seconds :<br><input type="number" name="seconds"><br>
+ Alert On Gap Between Sensors Mqtt publish?<input type="radio"  name="outputpublish" value=1>ON
+ <input type="radio"  name="outputpublish" value=2>OFF<br>
  <label for="cars">Choose Output on or off:</label>
  <select name="onoff" id="onoff">
     <option value="ON">ON</option>
     <option value="OFF">OFF</option>
  </select><br>
- output ON on sensor trigger?<input type="radio"  name="outputtrig" value=1>ON
+ Output ON on Sensor Trigger Respectively?<input type="radio"  name="outputtrig" value=1>ON
  <input type="radio"  name="outputtrig" value=2>OFF<br>
- Output Alert on gap between sensors larger than inputed above<input type="radio"  name="outputalert" value=1>ON
+ Output On Alert Gap Between Sensors Larger Than Inputed Above<input type="radio"  name="outputalert" value=1>ON
  <input type="radio"  name="outputalert" value=2>OFF<br>
- Individual sensor output on <input type="radio"  name="individual" value=1> Acceptable time sensor1
+ Individual Sensor Output On <input type="radio"  name="individual" value=1> Acceptable time sensor1
  <input type="radio"  name="individual" value=2> Acceptable time sensor2
  <input type="radio"  name="individual" value=3> on reset
  <input type="radio"  name="individual" value=4> offff<br>
- Input Acceptable Time in Seconds for above selected option :<br><input type="number" name="accepttime"><br>
+ Input Acceptable Time in Seconds For Above Selected Option :<br><input type="number" name="accepttime"><br>
  SSID:<br><input type="text" name="ssid"><br>
  Password:<br><input type="password" name="pass"><br><br>
  <input type="submit" value="Save">
@@ -51,7 +51,7 @@ const char* htmlForm = R"rawliteral(
 
 
 
-void WebServerConfig(){
+void webServerConfig(){
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){// "/" means the host ip address
   request->send(200, "text/html", htmlForm);
   });
@@ -60,59 +60,61 @@ void WebServerConfig(){
     if (request->hasParam("ssid", true) && request->hasParam("pass", true)) {
       String s = request->getParam("ssid", true)->value();
       String p = request->getParam("pass", true)->value();
-      String InputSensor1 = request->getParam("input1", true)->value();
-      String InputSensor2 = request->getParam("input2", true)->value();
-      String Sensor1Mode = request->getParam("sensormode1", true)->value();
-      String Sensor2Mode = request->getParam("sensormode2", true)->value();
-      uint8_t Sensor1onoff = request->getParam("myGroup", true)->value().toInt();
-      uint8_t Sensor2onoff = request->getParam("myGroup1", true)->value().toInt();
-      uint8_t Sensor1nonc = request->getParam("myGroup2", true)->value().toInt();
-      uint8_t Sensor2nonc = request->getParam("myGroup3", true)->value().toInt();
-      uint8_t SensorShiftchoise = request->getParam("Shifting", true)->value().toInt();//from sensor1 to sensor2 or sensor2 to sensor1
-      uint8_t proxicounteronoff = request->getParam("proxicounteronoff", true)->value().toInt();// choise to wherether to publish sensor individual count i.e sensor1 : 1 , sensor2 :2..
-      uint8_t proxishiftcounteronoff = request->getParam("Shiftcount", true)->value().toInt();
-      uint8_t Sensorusertimedifference= request->getParam("seconds", true)->value().toInt();
-      String Outputonoff = request->getParam("onoff", true)->value();
-      uint8_t SensorIndividualAcceptTimeselect = request->getParam("individual", true)->value().toInt();
-      uint8_t SensorIndividualAcceptTimeinput = request->getParam("accepttime", true)->value().toInt();
-      uint8_t SensorIndividualTriggerOutputon = request->getParam("outputtrig", true)->value().toInt();
-      uint8_t SensorDiffOutputAlerton = request->getParam("outputalert", true)->value().toInt();
+      String inputSensor1Name = request->getParam("input1", true)->value();
+      String inputSensor2Name = request->getParam("input2", true)->value();
+      String sensor1Mode = request->getParam("sensormode1", true)->value();
+      String sensor2Mode = request->getParam("sensormode2", true)->value();
+      uint8_t sensor1OnChoice = request->getParam("myGroup", true)->value().toInt();
+      uint8_t sensor2OnChoice = request->getParam("myGroup1", true)->value().toInt();
+      uint8_t sensor1NoNcChoice = request->getParam("myGroup2", true)->value().toInt();
+      uint8_t sensor2NoNcChoice = request->getParam("myGroup3", true)->value().toInt();
+      uint8_t sensorShiftChoice = request->getParam("Shifting", true)->value().toInt();//from sensor1 to sensor2 or sensor2 to sensor1
+      uint8_t proxiCounterOnChoice = request->getParam("proxicounteronoff", true)->value().toInt();// choise to wherether to publish sensor individual count i.e sensor1 : 1 , sensor2 :2..
+      uint8_t proxiShiftCounterOnChoice = request->getParam("Shiftcount", true)->value().toInt();
+      uint8_t sensorUserTimeDifference= request->getParam("seconds", true)->value().toInt();
+      String outputOnChoice = request->getParam("onoff", true)->value();
+      uint8_t sensorIndividualTriggerOutputon = request->getParam("outputtrig", true)->value().toInt();
+      uint8_t sensorDifferenceAlertMqttPublish = request->getParam("outputpublish", true)->value().toInt();
+      uint8_t sensorDiffOutputAlerton = request->getParam("outputalert", true)->value().toInt();
+      uint8_t sensorIndividualAcceptTimeSelect = request->getParam("individual", true)->value().toInt();
+      uint8_t sensorIndividualAcceptTimeInput = request->getParam("accepttime", true)->value().toInt();
+      
 
       Serial.println("input by user:");
-      Serial.println(InputSensor1);
-      Serial.println(InputSensor2);
-      Serial.println(Sensor1onoff);
-      Serial.println(Sensor2onoff);
-      Serial.println(Sensor1nonc);
-      Serial.println(Sensor2nonc);
-      Serial.println(SensorShiftchoise);
-      Serial.println(proxicounteronoff);
-      Serial.println(Outputonoff);
-      Serial.println(StoredSensorIndividualAcceptTimeUserInputInSeconds);
+      Serial.println(inputSensor1Name);
+      Serial.println(inputSensor2Name);
+      Serial.println(sensor1OnChoice);
+      Serial.println(sensor2OnChoice);
+      Serial.println(sensor1NoNcChoice);
+      Serial.println(sensor2NoNcChoice);
+      Serial.println(sensorShiftChoice);
+      Serial.println(proxiCounterOnChoice);
+      Serial.println(outputOnChoice);
+      Serial.println(storedSensorIndividualAcceptTimeUserInputInSeconds);
 
 
       //Serial.println(Sensor1_Mode);
       //Serial.println(Sensor2_Mode);
       
       preferences.begin("sensor", false);//store in preference
-      preferences.putString("InputSensor_1", InputSensor1);
-      preferences.putString("InputSensor_2",InputSensor2);
-      preferences.putString("Sensor_1mode", Sensor1Mode);
-      preferences.putString("Sensor_2mode", Sensor2Mode);
-      preferences.putInt("Sensor1onoff", Sensor1onoff);
-      preferences.putInt("Sensor2onoff", Sensor2onoff);
-      preferences.putInt("Sensor1nonc", Sensor1nonc);
-      preferences.putInt("Sensor2nonc", Sensor2nonc);
-      preferences.putInt("Sensorshift", SensorShiftchoise);
-      preferences.putInt("proxionoff", proxicounteronoff);
-      preferences.putInt("Shiftcount", proxishiftcounteronoff);
-      
-      preferences.putInt("proxi_time",Sensorusertimedifference );
-      preferences.putString("Outputonoff", Outputonoff);
-      preferences.putInt("individual",SensorIndividualAcceptTimeselect);
-      preferences.putInt("accepttime",SensorIndividualAcceptTimeinput);
-      preferences.putInt("outputtrig",SensorIndividualTriggerOutputon);
-      preferences.putInt("outputalert",SensorDiffOutputAlerton);
+      preferences.putString("InputSensor_1", inputSensor1Name);
+      preferences.putString("InputSensor_2",inputSensor2Name);
+      preferences.putString("Sensor_1mode", sensor1Mode);
+      preferences.putString("Sensor_2mode", sensor2Mode);
+      preferences.putInt("Sensor1onoff", sensor1OnChoice);
+      preferences.putInt("Sensor2onoff", sensor2OnChoice);
+      preferences.putInt("Sensor1nonc", sensor1NoNcChoice);
+      preferences.putInt("Sensor2nonc", sensor2NoNcChoice);
+      preferences.putInt("Sensorshift", sensorShiftChoice);
+      preferences.putInt("proxionoff", proxiCounterOnChoice);
+      preferences.putInt("Shiftcount", proxiShiftCounterOnChoice);
+      preferences.putInt("proxi_time",sensorUserTimeDifference );
+      preferences.putString("Outputonoff", outputOnChoice);
+      preferences.putInt("outputtrig",sensorIndividualTriggerOutputon);
+      preferences.putInt("outputpublish",sensorDifferenceAlertMqttPublish);
+      preferences.putInt("outputalert",sensorDiffOutputAlerton);
+      preferences.putInt("individual",sensorIndividualAcceptTimeSelect);
+      preferences.putInt("accepttime",sensorIndividualAcceptTimeInput);
       preferences.end();
 
       
@@ -124,7 +126,7 @@ void WebServerConfig(){
       request->send(200, "text/html", "<h3>Credentials Saved. Restarting...</h3>");
       Serial.println("+++++++++++++++++++++++++++++++++++++++++++++++");
      
-      ShouldRestartESP = true; 
+      shouldRestartESP = true; 
       //delay(5000);
       //ESP.restart();
     }
