@@ -1,12 +1,10 @@
 void mqttReconnectCheck(){
   // Loop until we're reconnected
   
-  if (!mqttClient.connected() && millis()- lastMqttCheck > 2000) {
+  if (!mqttClient.connected() && millis()- lastMqttCheck > 2000) {//Every 2 seconds
     lastMqttCheck = millis();
     Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    // test.mosquitto.org does not require username/password
-    const char* mqttClientId = "ESP32_Kinjal_99214po";
+    const char* mqttClientId = "ESP32_Kinjal_99214po";// Does not require the username and Password
     if (mqttClient.connect(mqttClientId)) { 
       Serial.println("connected");
       // Subscribe to a topic
@@ -17,7 +15,7 @@ void mqttReconnectCheck(){
       Serial.print(mqttClient.state());
       Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
-      //delay(5000);
+      
     }
   }
   return;
@@ -25,56 +23,23 @@ void mqttReconnectCheck(){
 
 
 
-void mqttPublishData(uint8_t *shiftCount,uint8_t *jsonCounterOn ){
+void mqttPublishData(uint8_t *shiftCount,uint8_t *jsonCounterOn ){//Publish Mqtt Data
    //long now = millis();
-     // Serial.println("----------------------------------------------------------------+");
-  while (millis() - lastMqttDataPublish > 2000) {
-    lastMqttDataPublish = millis();
-    commomMqttDataCountValue++;
+  while (millis() - lastMqttDataPub > 2000) {
+    lastMqttDataPub = millis();
+    mqttDataCount++;
     Serial.println("----------------------------------------------------------------+");
     char msg[50];
-    snprintf (msg, 50, "hello world #%d", commomMqttDataCountValue);
-     //Serial.println("----------------------------------------------------------------+");
+    snprintf (msg, 50, "hello world #%d", mqttDataCount);
     // Publish a message to a topic
     mqttClient.publish("esp32/test/kinjal_mqtt_topic", msg);
     Serial.print("Publishing message: ");
     Serial.println(msg);
     
-  
-
-    if (sensor1Triggered == true ) {//sensor detects input
-      Serial.print("metal detected");
-      Serial.print(sensor1ProxiCount);
-      Serial.println(" times.");
-      //detected_proxi1 = false;
-    }
-
-    if (sensor2Triggered == true) {//sensor detects
-      Serial.print("metal detected");
-      Serial.print(sensor2ProxiCount);
-      Serial.println(" times.");
-      //detected_proxi1 = false;
-    }
-    
-
-    
-
-
-
-   // DynamicJsonDocument doc(1024);or
-    Serial.println(storedSensor1Name);
-    Serial.println(storedSensor2Name);
-   // Serial.println(storedInput1Mode);
-    //Serial.println(storedInput2Mode);
-    Serial.println(storedSensor1OnChoice);
-    Serial.println(storedSensor2OnChoice);
-    Serial.println(storedSensorShiftChoise);
-    Serial.println(*jsonCounterOn);
-    Serial.println(storedUserInputSensorsTimeDifferenceInSeconds);
-    Serial.println(storedOutputONSetupChoise);
-    Serial.println(storedSensorIndividualAcceptTimeSelectAndOutputOn);
-    Serial.println(storedSensorIndividualAcceptTimeUserInputInSeconds);
-    Serial.println(storedSensorDifferenceOutputAlerton);
+     Serial.println(storedsensor1OnTime);
+     
+     
+    // DynamicJsonDocument doc(1024);or                             
     /*JsonDocument doc;
     doc[storedInput1] = 0;
     doc[storedInput2] = 0;
@@ -88,34 +53,34 @@ void mqttPublishData(uint8_t *shiftCount,uint8_t *jsonCounterOn ){
 
     if (*jsonCounterOn == 1){
 
-      if (storedSensor1OnChoice == 1 && storedSensor2OnChoice == 1){// if both sensors are on
+      if (storedSensor1OnChoice == true && storedSensor2OnChoice == 1){// if both sensors are on
       char msg2[50]; 
-      snprintf ( msg2, 50, " {\" %s \": %d ,\" %s \" : %d }", storedSensor1Name ,sensor1ProxiCount, storedSensor2Name, sensor2ProxiCount);
+      snprintf ( msg2, 50, " {\" %s \": %d ,\" %s \" : %d }", storedSensor1Name ,sensor1Count, storedSensor2Name, sensor2Count);
       mqttClient.publish("kinjal/esp32/counter1", msg2);
       Serial.println(msg2);
       }
-      else if (storedSensor1OnChoice== 2 && storedSensor2OnChoice == 1){//if sensor1 is off and sensor2 is on
+      else if (storedSensor1OnChoice== false && storedSensor2OnChoice == 1){//if sensor1 is off and sensor2 is on
         char msg2[50]; 
-        snprintf ( msg2, 50, " {\" %s \" : %d }", storedSensor2Name, sensor2ProxiCount);
+        snprintf ( msg2, 50, " {\" %s \" : %d }", storedSensor2Name, sensor2Count);
         mqttClient.publish("kinjal/esp32/counter1", msg2);
         Serial.println(msg2);
       }
-      else if (storedSensor1OnChoice == 1 && storedSensor2OnChoice == 2){//if sensor1 is on and sensor2 off
+      else if (storedSensor1OnChoice == true && storedSensor2OnChoice == 2){//if sensor1 is on and sensor2 off
         char msg2[50]; 
-        snprintf ( msg2, 50, " {\" %s \" : %d }", storedSensor1Name, sensor1ProxiCount);
+        snprintf ( msg2, 50, " {\" %s \" : %d }", storedSensor1Name, sensor1Count);
         mqttClient.publish("kinjal/esp32/counter1", msg2);
         Serial.println(msg2);
       }
-      else if (storedSensor1OnChoice == 1 && storedSensor2OnChoice == 3){//if sensor1 is on and sensor2 is reset switch for sensor1
+      else if (storedSensor1OnChoice == true && storedSensor2OnChoice == 3){//if sensor1 is on and sensor2 is reset switch for sensor1
         char msg2[50]; 
-        snprintf ( msg2, 50, " {\" %s \": %d ,\" %s \" : %d }", storedSensor1Name ,sensor1ProxiCount, storedSensor2Name, sensor2ProxiCount);
+        snprintf ( msg2, 50, " {\" %s \": %d ,\" %s \" : %d }", storedSensor1Name ,sensor1Count, storedSensor2Name, sensor2Count);
         mqttClient.publish("kinjal/esp32/counter1", msg2);
         Serial.println(msg2);
       }
 
       else{
         char msg2[50]; 
-        snprintf ( msg2, 50, " {no sensor on %d}", commomMqttDataCountValue );
+        snprintf ( msg2, 50, " {no sensor on %d}", mqttDataCount );
         mqttClient.publish("kinjal/esp32/counter1", msg2);
         Serial.println(msg2);
 
@@ -124,7 +89,7 @@ void mqttPublishData(uint8_t *shiftCount,uint8_t *jsonCounterOn ){
 
 
 
-    if (storedSensorShiftChoise == 1){
+    if (storedSensorShiftChoise == true){//If Right shift Choosen
       rightShiftStatus = true;
       sensorShiftRight();
        
@@ -137,24 +102,24 @@ void mqttPublishData(uint8_t *shiftCount,uint8_t *jsonCounterOn ){
     if (*shiftCount == 1){
        if(rightShiftStatus == true){
        char msg1[50];
-       snprintf(msg1, 50, "Proxi Counter: %d", proxiCounterAfterBothSensorDetects);  //for both proximity detects one object than counter increments
+       snprintf(msg1, 50, "Proxi Counter: %d", sensorCount);  //for both proximity detects one object than counter increments
        mqttClient.publish("kinjal/esp32/counter", msg1);
        Serial.println(msg1);
        }
        else{
         char msg1[50];
-        snprintf(msg1, 50, "Proxi Counter: %d", proxiCounterAfterBothSensorDetects );  //for both proximity detects one object than counter increments
-        volatile int32_t sensor1ProxiCount = 0;
-        volatile int32_t sensor2ProxiCount = 0;
-        volatile bool sensor1Triggered = false;
-        volatile bool sensor2Triggered = false;
+        snprintf(msg1, 50, "Proxi Counter: %d", sensorCount );  //for both proximity detects one object than counter increments
+        //volatile int32_t sensor1Count = 0;
+        //volatile int32_t sensor2Count = 0;
+        //volatile bool sensor1Triggered = false;
+        //volatile bool sensor2Triggered = false;
         mqttClient.publish("kinjal/esp32/counter", msg1);
         Serial.println(msg1);
        }
     }
 
 
-    if (storedSensorDifferenceAlertMqttPublish==1){
+    if (storedMqttPubSensorTimeDiff==1){
        acceptableTimeAlert();
     }
     

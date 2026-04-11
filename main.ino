@@ -19,10 +19,22 @@ AsyncWebServer server(80);
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);//pack wifi client in mqtt client container
 
+// ----- Forward Declarations Of Function -----
+void proximityConfig();
+void setupOutputOn();
+void sensorShiftRight();
+void sensorShiftLeft();
+void acceptableTimeAlert();
+void timeDiffAlertBetweenSensors();
+void sensorTriggerOutputOn();
+void sensor1AcceptableTime();
+void sensor2AcceptableTime();
+void outputOnReset();
 
-//long time1 = 0;
-//long time2 = 0;
-//long timediff = 0;
+void wifiConfig();
+void webServerConfig();
+void mqttReconnectCheck();
+void mqttPublishData(uint8_t *shiftCounter,uint8_t *jsonCountOn);
 
 
 //sensor Global variables
@@ -30,76 +42,75 @@ String storedSensor1Name;//user input Sensor1 name
 String storedSensor2Name;//user input Sensor2 name
 //String storedInput1Mode;
 //String storedInput1Mode;
-uint8_t storedSensor1OnChoice;//Whether the input choice is to "ON" the sensor1 or not
+bool storedSensor1OnChoice;//Whether the input choice is to "ON" the sensor1 or not
 uint8_t storedSensor2OnChoice;//Whether the input choice is to "ON" the sensor2 or not
 //uint8_t storedSensor1nonc;
 //uint8_t storedSensor2nonc;
-uint8_t storedSensorShiftChoise;//Whether the user Input is Right Shift or Left Shift
-uint8_t storedUserInputSensorsTimeDifferenceInSeconds;//User INput Acceptable Time Difference between two sensor in seconds 
-uint8_t storedSensorIndividualTriggerOutputon;//User input of whether the user want the output on for few seconds when sensor detectes something
-uint8_t storedSensorDifferenceOutputAlerton;//User input of ALERT Output "ON" when the sensor Difference exceeds thr 
-String storedOutputONSetupChoise;//User Input of user Want Output ON or Not in Setup
-uint8_t storedSensorDifferenceAlertMqttPublish;//User input if user want to Publish the Alert message on Mqtt or Not
+bool storedSensorShiftChoise;//Whether the user Input is Right Shift or Left Shift
+uint8_t storedInputSensorTimeDiff;//User INput Acceptable Time Difference between two sensor in seconds 
+uint8_t storedSensorTriggerOut;//User input of whether the user want the output on for few seconds when sensor detectes something
+uint8_t storedSensorDiffOut;//User input of ALERT Output "ON" when the sensor Difference exceeds thr 
+//String storedOutputChoice;//User Input of user Want Output ON or Not in Setup
+uint8_t storedMqttPubSensorTimeDiff ;//User input if user want to Publish the Alert message on Mqtt or Not
+uint8_t storedsensor1OnTime;
 
 bool rightShiftStatus = false;//Whether User Inputed RightShift or LeftShift Choice Flag 
 //bool leftshiftcount = false;
 
-unsigned long lastMqttDataPublish = 0;//Time line for Mqtt Data Publish 
+unsigned long lastMqttDataPub = 0;//Time line for Mqtt Data Publish 
 unsigned long lastWifiCheck = 0;//Time line for Wifi Data Publish
 unsigned long lastMqttCheck = 0;//Time line for Mqtt Reconnect in millis()
 
-unsigned int commomMqttDataCountValue = 0;//common count for every mqtt publish data
-volatile int32_t proxiCounterAfterBothSensorDetects = 0;  //for both proximity detects one object than counter increments
-volatile int32_t sensor1ProxiCount = 0;//Sensor1 Count to Publish when needed
-volatile int32_t sensor2ProxiCount = 0;//Sensor2 Count to Publish when needed
-volatile bool sensor1Triggered = false;//Sensor1 Detects Status
-volatile bool sensor2Triggered = false;//Sensor2 Detects Status
+unsigned int mqttDataCount = 0;//common count for every mqtt publish data
+volatile int32_t sensorCount = 0;  //for both proximity detects one object than counter increments
+volatile int32_t sensor1Count = 0;//Sensor1 Count to Publish when needed
+volatile int32_t sensor2Count = 0;//Sensor2 Count to Publish when needed
+volatile bool sensor1Shift = false;//Sensor1 Detects Status for shift operation 
+volatile bool sensor2Shift = false;//Sensor2 Detects Status for shift operation
 
 volatile bool sensor1TriggeredAlert = false;//Sensor1 Detects Status for Alert
 volatile bool sensor2TriggeredAlert = false;//Sensor2 Detects Status for Alert
-unsigned long sensor1TimeWhenTriggeredAlert = 0;//
-unsigned long sensor2TimeWhenTriggeredAlert = 0;//
-unsigned long timeDifferenceAlert=0;//
+unsigned long sensor1TimeTriggered = 0;//Time in millis for timeDiffAlertBetweenSensors()
+unsigned long sensor2TimeTriggered = 0;//Time in millis for timeDiffAlertBetweenSensors()
+unsigned long timeDifferenceAlert=0;//Time Difference between Sensors for timeDiffAlertBetweenSensors()
 
 //volatile bool detected_proxi3 = false;// counter reset mode
-volatile bool sensor1TriggeredMqttPublishAlert = false;
-volatile bool sensor2TriggeredMqttPublishAlert = false;
-unsigned long sensor1TimeWhenTriggeredMqttPublish = 0;
-unsigned long sensor2TimeWhenTriggeredMqttPublish = 0;
-unsigned long timeDifferenceBetweenSensors = 0;
+volatile bool sensor1MqttPub = false;//sensor mqtt publish Alert message
+volatile bool sensor2MqttPub = false;//sensor mqtt publish Alert message
+unsigned long sensor1TimeMqttPub = 0;//sensor 1 time when triggered
+unsigned long sensor2TimeMqttPub = 0;//sensor 2 time when triggered
+unsigned long timeDiffInSensors = 0;//Time difference between Sensors
 //unsigned long lasttimedifftime = 0;
 //volatile bool waitingForObjectDetectedSensor1=false;
 
 
-unsigned long outputStartTimeOnSensorTriggering = 0;//output on for few seconds when sensor detects 
-unsigned long outputStartTimeOnReset = 0;//output for reset
-unsigned long outputStartTimeSensorDifferenceAlert = 0;  //buzzer on timing for negative output
-unsigned long currentAlert = 0;
-bool outputIsActiveForTriggering = false;
-bool outputIsActiveForReset = false;
-bool outputIsActiveForSensorDifferenceAlert = false;
+unsigned long outTimeOnSensorTrig = 0;//output on for few seconds when sensor detects for sensorTriggerOutputOn()
+unsigned long outTimeOnReset = 0;//output for reset
+unsigned long outTimeOnSensorDiff = 0;  //Output on for few senconds on sensor difference 
+//unsigned long currentAlert = 0;
+bool outActiveOnTrigger = false;
+bool outActiveOnReset = false;
+bool outActiveOnSensorDiff = false;
 //unsigned long outputStartResetTime = 0;
 //bool outputIsReset = false;
 
 // Individual acceptable times of sensor1 and sensor2 and outpput integration
-uint8_t storedSensorIndividualAcceptTimeSelectAndOutputOn = 0;//select for whome they want to enter acceptable time and want output ON sensor1,sensor2 or reset 
-uint8_t storedSensorIndividualAcceptTimeUserInputInSeconds = 0;// input from user the seconds they want for individual accept time
-unsigned long currentTimeForOutputSensor1 = 0;
-volatile bool waitingForObjectDetectedSensor1 = false;
-long lastDetectedOutoutTimeSensor1 = 0;
-bool outputStateForSensor1 = false;
+uint8_t storedIndividualAcceptTime = 0;//select for whome they want to enter acceptable time and want output ON sensor1,sensor2 or reset 
+uint8_t storedUserIndividualAcceptTime = 0;// input from user the seconds they want for individual accept time
+unsigned long outTimeSensor1 = 0;
+volatile bool objectDetectedSensor1 = false;
+long lastOutTimeSensor1 = 0;//for sensor1AcceptableTime()
+bool outStateSensor1 = false;
 unsigned long timeDifferenceSensor1 = 0;
 
 
-unsigned long currentTimeForOutputSensor2 = 0;
-volatile bool waitingForObjectDetectedSensor2 = false;
-long lastDetectedOutoutTimeSensor2 = 0;
-bool outputStateForSensor2 = false;
+unsigned long outTimeSensor2 = 0;
+volatile bool objectDetectedSensor2 = false;
+long lastOutTimeSensor2 = 0; //for sensor2AcceptableTime()
+bool outStateSensor2 = false;
 unsigned long timeDifferenceSensor2 = 0;
 
 volatile bool waitingForReset = false;// for reset output on function
-
-
 bool shouldRestartESP = false;  //used for esp restart input uis given through webserver
 
 
@@ -112,9 +123,9 @@ void setup() {
   pinMode(6, INPUT_PULLUP);
   pinMode(7, INPUT_PULLUP);
 
-
-  proximityConfig();  // configure the proximity and output ONOFF condition by user
-  setupOutputOn();//
+  configInputOutput();
+  //proximityConfig();  // configure the proximity and output ONOFF condition by user
+  //setupOutputOn();//
 
 
   // 2. Decide Connection Strategy
@@ -183,7 +194,7 @@ void loop() {
     //Serial.println("----------------------------------------------------------------+");
   }
 
-  if(storedSensorIndividualTriggerOutputon==1){
+  if(storedSensorTriggerOut==1){
     sensorTriggerOutputOn();
   }
 
@@ -192,17 +203,17 @@ void loop() {
       outputIsActiveNeg = false;
       Serial.println("Output pin 10 turned OFF after 2 seconds.");
   }*/
-  if (storedSensorIndividualAcceptTimeSelectAndOutputOn == 1) {  // for input of acceptable time for sensor 1
+  if (storedIndividualAcceptTime == 1) {  // for input of acceptable time for sensor 1
     sensor1AcceptableTime();
   } 
-  else if (storedSensorIndividualAcceptTimeSelectAndOutputOn == 2) {
+  else if (storedIndividualAcceptTime == 2) {
     sensor2AcceptableTime();
   }
-  else if (storedSensorIndividualAcceptTimeSelectAndOutputOn == 3) {
+  else if (storedIndividualAcceptTime == 3) {
     outputOnReset();
   }
   
-  if (storedSensorDifferenceOutputAlerton == 1){
+  if (storedSensorDiffOut == 1){
        timeDiffAlertBetweenSensors();
   }
   
