@@ -12,7 +12,8 @@ const char* htmlForm = R"rawliteral(
  <input type="radio"  name="myGroup2" value=1> NO
  <input type="radio"  name="myGroup2" value=2> NC<br>
  Sensor1 Mode:<input type="radio"  name="sensormode1" value=1>FALLING
- <input type="radio"  name="sensormode1" value=2> RISING<br>
+ <input type="radio"  name="sensormode1" value=2> RISING
+ <input type="radio"  name="sensormode1" value=3> CHANGE<br>
  InputSensor2 Name:<br><input type="text" name="input2"><br>
  <input type="radio"  name="myGroup1" value=1> ON Sensor2
  <input type="radio"  name="myGroup1" value=2> OFF Sensor2
@@ -20,7 +21,8 @@ const char* htmlForm = R"rawliteral(
  <input type="radio"  name="myGroup3" value=1> NO
  <input type="radio"  name="myGroup3" value=2> NC<br>
  Sensor2 Mode:<input type="radio"  name="sensormode2" value=1>FALLING
- <input type="radio"  name="sensormode2" value=2> RISING<br>
+ <input type="radio"  name="sensormode2" value=2> RISING
+ <input type="radio"  name="sensormode2" value=3> CHANGE<br>
  Shift Choice: <input type="radio"  name="Shifting" value=1> Sensor1 to Sensor2 Right Shift
  <input type="radio"  name="Shifting" value=2> Sensor2 to Sensor1 Left Shift<br>
  Left Right Shift Count Choice: <input type="radio"  name="Shiftcount" value=1> ON
@@ -41,8 +43,9 @@ const char* htmlForm = R"rawliteral(
  <input type="radio"  name="individual" value=3> on reset
  <input type="radio"  name="individual" value=4> offff<br>
  Input Acceptable Time in Seconds For Above Selected Option :<br><input type="number" name="accepttime"><br>
- Input Mqtt publish the ON--ON sensor1 time:<input type="radio"  name="time1" value=1>ON
- <input type="radio"  name="time1" value=2>OFF<br>
+ Input Mqtt publish the ON--OFF sensor1 time Mqtt Publish:<input type="radio"  name="onofftime" value=1>Sensor1 Only
+ <input type="radio"  name="onofftime" value=2>Sensor2 Only
+ <input type="radio"  name="onofftime" value=3>Both Sensor<br>
  SSID:<br><input type="text" name="ssid"><br>
  Password:<br><input type="password" name="pass"><br><br>
  <input type="submit" value="Save">
@@ -63,9 +66,9 @@ void webServerConfig(){
       String p = request->getParam("pass", true)->value();
       String inputSensor1Name = request->getParam("input1", true)->value();
       String inputSensor2Name = request->getParam("input2", true)->value();
-      bool sensor1Mode = (request->getParam("sensormode1", true)->value()== "1") ? true : false;
+      uint8_t sensor1Mode = request->getParam("sensormode1", true)->value().toInt();
       //String sensor1Mode = request->getParam("sensormode1", true)->value(); 
-      bool sensor2Mode = (request->getParam("sensormode2", true)->value()== "1") ? true : false;
+      uint8_t sensor2Mode = request->getParam("sensormode2", true)->value().toInt();
       bool sensor1OnChoice = (request->getParam("myGroup", true)->value()== "1") ? true : false;
       uint8_t sensor2OnChoice = request->getParam("myGroup1", true)->value().toInt();
       bool sensor1NoNcChoice = (request->getParam("myGroup2", true)->value()== "1") ? true : false;
@@ -80,9 +83,9 @@ void webServerConfig(){
       bool sensorDiffOutputAlerton = (request->getParam("outputalert", true)->value()== "1") ? true : false;
       uint8_t sensorIndividualAcceptTimeSelect = request->getParam("individual", true)->value().toInt();
       uint8_t sensorIndividualAcceptTimeInput = request->getParam("accepttime", true)->value().toInt();
-      bool sensor1OnTime = (request->getParam("time1", true)->value() == "1") ? true : false;
+      uint8_t sensorOnOffTime = request->getParam("onofftime", true)->value().toInt();
       //bool proxiShiftCounterOnChoice = (request->getParam("Shiftcount", true)->value() == "1") ? true : false;
-       bool sensor1Modes;
+      
       if (s=="" && p==""){
         request->send(200, "text/html", "<h3>SSID And Password not Provided</h3>");
       }
@@ -112,15 +115,15 @@ void webServerConfig(){
       Serial.println(sensorShiftChoice);
       Serial.println(proxiCounterOnChoice);
       Serial.println(outputOnChoice);
-      Serial.println(sensor1OnTime);
+      Serial.println(sensorOnOffTime);
 
       
       //store in preference
       preferences.begin("sensor", false);
       preferences.putString("InputSensor_1", inputSensor1Name);
       preferences.putString("InputSensor_2",inputSensor2Name);
-      preferences.putBool("Sensor_1mode", sensor1Mode);
-      preferences.putBool("Sensor_2mode", sensor2Mode);
+      preferences.putInt("Sensor_1mode", sensor1Mode);
+      preferences.putInt("Sensor_2mode", sensor2Mode);
       preferences.putBool("Sensor1onoff", sensor1OnChoice);
       preferences.putInt("Sensor2onoff", sensor2OnChoice);
       preferences.putBool("Sensor1nonc", sensor1NoNcChoice);
@@ -135,7 +138,7 @@ void webServerConfig(){
       preferences.putBool("outputalert",sensorDiffOutputAlerton);
       preferences.putInt("individual",sensorIndividualAcceptTimeSelect);
       preferences.putInt("accepttime",sensorIndividualAcceptTimeInput);
-      preferences.putBool("sensor1OnTime",sensor1OnTime);
+      preferences.putInt("sensorOnOffTime",sensorOnOffTime);
       preferences.end();
 
       
