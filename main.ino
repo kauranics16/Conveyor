@@ -37,7 +37,8 @@ void wifiConfig();
 void webServerConfig();
 void mqttReconnectCheck();
 void mqttPublishData(bool *shiftCounter,bool *jsonCountOn);
-void Time();
+void TimeBetweenObject1();
+void TimeBetweenObject2();
 void onOffTimeSensor1();
 void onOffTimeSensor2();
 
@@ -53,6 +54,7 @@ bool storedSensorTriggerOut;//User input of whether the user want the output on 
 bool storedSensorDiffOut;//User input of ALERT Output "ON" when the sensor Difference exceeds thresold given by user
 bool storedMqttPubSensorTimeDiff ;//User input if user want to Publish the Alert message on Mqtt or Not
 uint8_t storedOnTimeChoice;
+uint8_t storedTimeBwObject;
 
 bool rightShiftStatus = false;//Whether User Inputed RightShift or LeftShift Choice Flag For Shift Count Publish 
 
@@ -92,17 +94,17 @@ volatile bool isStateChanged1 = false;
 volatile bool currentStateSensor2;//or 
 volatile bool isStateChanged2 = false;
 
-
-
+volatile bool objectPresent1=false;
+volatile bool objectPresent2=false;
 
 volatile bool waitingForReset = false;// for reset output on function
 bool shouldRestartESP = false;  //used for esp restart input uis given through webserver
 
-//unsigned long timeSensor1=0;
-volatile bool objectDetected=false;
 
-volatile unsigned long arrivalTime = 0;
-volatile bool objectPresent = false;
+
+
+
+
 
 
 
@@ -209,9 +211,20 @@ void loop() {
   else if (storedOnTimeChoice==2){
     onOffTimeSensor2();
   }
-  else{
+  else if (storedOnTimeChoice==3){
     onOffTimeSensor1();
     onOffTimeSensor2();
   }
   
+  if(storedTimeBwObject==1){
+    TimeBetweenObject1();
+  }
+  else if(storedTimeBwObject==2){
+    TimeBetweenObject2();
+  }
+  else if(storedTimeBwObject==3){
+    TimeBetweenObject1();
+    TimeBetweenObject2();
+  }
+
 }

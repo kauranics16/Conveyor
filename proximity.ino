@@ -3,12 +3,10 @@ void ARDUINO_ISR_ATTR Proximity1_ISR() {//Intterupt Service Routine for Input1 (
   sensor1TimeMqttPub = millis();
   sensor1TimeTriggered = millis();
   objectDetectedSensor1 = true;
-  objectDetected=true;
+  objectPresent1=true;
   sensor1MqttPub = true;
   sensor1TriggeredAlert = true;
   sensor1Shift = true;
-  arrivalTime = millis();
-  objectPresent = true;
 }
 
 void ARDUINO_ISR_ATTR Proximity2_ISR() {//Interrupt Service Routine of Input2 (Sensor2)
@@ -16,6 +14,7 @@ void ARDUINO_ISR_ATTR Proximity2_ISR() {//Interrupt Service Routine of Input2 (S
   sensor2TimeMqttPub= millis();
   sensor2TimeTriggered = millis();
   objectDetectedSensor2 = true;
+  objectPresent2=true;
   sensor2MqttPub = true;
   sensor2TriggeredAlert = true;
   sensor2Shift = true;
@@ -65,6 +64,7 @@ void configInputOutput(){
   storedSensorDiffOut=preferences.getBool("outputalert", false);
   storedSensorTimeDiffSeconds = preferences.getInt("proxi_time",0);
   bool storedOutputChoice=preferences.getBool("Outputonoff",false);
+  storedTimeBwObject=preferences.getInt("timeBwObject",false);
   storedOnTimeChoice=preferences.getInt("sensorOnOffTime",0);      
   preferences.end();
 
@@ -420,25 +420,35 @@ void outputOnReset(){
 
 }
 
-void Time(){
-  
-  
-  //timeSensor1 = millis();
-  if (objectDetected == true){
-    static unsigned long timeSensor1=0;
-    static unsigned long lastOutTime = 0; 
-    static unsigned long timeDifference = 0; 
-    objectDetected = false;
-    timeDifference = millis() -  lastOutTime;
-    lastOutTime = millis();
-    Serial.println("timeDifference");
-    Serial.println(timeDifference);
-    timeDifference =0;
-    Serial.println("timeDifference after reset");
-    Serial.println(timeDifference);
+void TimeBetweenObject1(){
+  if (objectPresent1 == true){
+    static unsigned long lastOutTime1 = 0; 
+    static unsigned long timeDifference1 = 0; 
+    objectPresent1 = false;
+    timeDifference1 = millis() -  lastOutTime1;
+    lastOutTime1 = millis();
+    String timeDiff1;
+    timeDiff1 += "TimeDifference:" + String(timeDifference1);
+    mqttClient.publish("kinjal/esp32/timediff1", timeDiff1.c_str());
+    Serial.println(timeDiff1);
+    timeDifference1 =0;
   }
- 
- 
+  return;
+}
+
+void TimeBetweenObject2(){
+  if (objectPresent2 == true){
+    static unsigned long lastOutTime2 = 0; 
+    static unsigned long timeDifference2 = 0; 
+    objectPresent2 = false;
+    timeDifference2 = millis() -  lastOutTime2;
+    lastOutTime2 = millis();
+    String timeDiff2;
+    timeDiff2 += "TimeDifference:" + String(timeDifference2);
+    mqttClient.publish("kinjal/esp32/timediff2", timeDiff2.c_str());
+    Serial.println(timeDiff2);
+    timeDifference2 =0;
+  }
   return;
 }
 

@@ -43,9 +43,14 @@ const char* htmlForm = R"rawliteral(
  <input type="radio"  name="individual" value=3> on reset
  <input type="radio"  name="individual" value=4> offff<br>
  Input Acceptable Time in Seconds For Above Selected Option :<br><input type="number" name="accepttime"><br>
- Input Mqtt publish the ON--OFF sensor1 time Mqtt Publish:<input type="radio"  name="onofftime" value=1>Sensor1 Only
+ Mqtt Publish Time Between Object detected:<input type="radio"  name="objectdetect" value=1> Sensor1 Only
+ <input type="radio"  name="objectdetect" value=2>Sensor2 Only
+ <input type="radio"  name="objectdetect" value=3>Both Sensors
+ <input type="radio"  name="objectdetect" value=4>Off<br>
+ Input Mqtt publish the ON--OFF sensor1 time Mqtt Publish(Change mode only):<input type="radio"  name="onofftime" value=1>Sensor1 Only
  <input type="radio"  name="onofftime" value=2>Sensor2 Only
- <input type="radio"  name="onofftime" value=3>Both Sensor<br>
+ <input type="radio"  name="onofftime" value=3>Both Sensors
+ <input type="radio"  name="onofftime" value=4>Off<br>
  SSID:<br><input type="text" name="ssid"><br>
  Password:<br><input type="password" name="pass"><br><br>
  <input type="submit" value="Save">
@@ -83,6 +88,7 @@ void webServerConfig(){
       bool sensorDiffOutputAlerton = (request->getParam("outputalert", true)->value()== "1") ? true : false;
       uint8_t sensorIndividualAcceptTimeSelect = request->getParam("individual", true)->value().toInt();
       uint8_t sensorIndividualAcceptTimeInput = request->getParam("accepttime", true)->value().toInt();
+      uint8_t timeBetweenObject=request->getParam("objectdetect", true)->value().toInt();
       uint8_t sensorOnOffTime = request->getParam("onofftime", true)->value().toInt();
       //bool proxiShiftCounterOnChoice = (request->getParam("Shiftcount", true)->value() == "1") ? true : false;
       
@@ -138,6 +144,7 @@ void webServerConfig(){
       preferences.putBool("outputalert",sensorDiffOutputAlerton);
       preferences.putInt("individual",sensorIndividualAcceptTimeSelect);
       preferences.putInt("accepttime",sensorIndividualAcceptTimeInput);
+      preferences.putInt("timeBwObject",timeBetweenObject);
       preferences.putInt("sensorOnOffTime",sensorOnOffTime);
       preferences.end();
 

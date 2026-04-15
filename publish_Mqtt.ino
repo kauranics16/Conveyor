@@ -28,17 +28,7 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
     lastMqttDataPub = millis();
     mqttDataCount++;
     Serial.println("----------------------------------------------------------------+");
-    
-    /*char msg[50];
-    snprintf (msg, 50, "hello world #%d", mqttDataCount);
-    // Publish a message to a topic
-    mqttClient.publish("esp32/test/kinjal_mqtt_topic", msg);
-    Serial.print("Publishing message: ");
-    Serial.println(msg);*/
-    
-    Serial.println(storedOnTimeChoice);
-     
-     
+     Serial.println(storedTimeBwObject);
     // DynamicJsonDocument doc(1024);or                             
     /*JsonDocument doc;
     doc[storedInput1] = 0;
@@ -48,8 +38,6 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
     serializeJson(doc, buffer);
     mqtt_client.publish("kinjal/esp32/countertype", buffer);*/
 
-    
-    
 
     if (*jsonCounterOn == true){
       /// if both sensors are on
@@ -130,8 +118,6 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
        acceptableTimeAlert();
     }
     
-    
-  
     //serializeJson(doc, mqtt_client);
     //char buffer[256];
     //size_t n = serializeJson(doc, buffer);
