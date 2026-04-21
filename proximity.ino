@@ -154,7 +154,7 @@ void configInputOutput(){
   }
 
 
-
+  //Output On or OFF
   if (storedOutputChoice==true){
     pinMode(OUTPUT_PIN, OUTPUT);
     Serial.println("output ON mmmmmmmmm");
@@ -327,7 +327,6 @@ void sensorTriggerOutputOn(){
   static bool outActiveOnTrigger = false;
   static unsigned long outTimeOn1SensorTrig = 0;
   if (objectDetectedSensor1 == true || objectDetectedSensor2 == true){
-    Serial.println("objectdetected");
     outTimeOn1SensorTrig = millis();
     objectDetectedSensor1 = false;
     objectDetectedSensor2 = false;
@@ -338,7 +337,6 @@ void sensorTriggerOutputOn(){
   if (outActiveOnTrigger && (millis() - outTimeOn1SensorTrig >= 100UL)) {
     digitalWrite(OUTPUT_PIN, LOW);
     outActiveOnTrigger = false;
-    Serial.println("Output pin 10 turned OFF after seconds.");
   }
   return;
 } 
@@ -346,14 +344,14 @@ void sensorTriggerOutputOn(){
 
 
 
-
+//If Acceptable time to Detect Object is Greater Than User Input Acceptable time than Output On Continuously Until it Detects the Object (for Sensor1 or Input1 only)
 void sensor1AcceptableTime(){
   static unsigned long lastOutTimeSensor1 = 0; 
   static bool outStateSensor1 = false;
   static unsigned long timeDifferenceSensor1 = 0;
   outTimeSensor1 = millis();
   if (objectDetectedSensor1 == true){
-    Serial.println("objectdetected");
+    //Serial.println("objectdetected");
     lastOutTimeSensor1 = outTimeSensor1;
     objectDetectedSensor1 = false;
     digitalWrite(OUTPUT_PIN, LOW);
@@ -363,7 +361,7 @@ void sensor1AcceptableTime(){
   //Output On continuously when Time needed by sensor1 to detect something is beyond Time Gap Inputed by User
   if (timeDifferenceSensor1>storedAcceptTimeSeconds*1000UL){
      if(outStateSensor1==true){
-       Serial.println("output onnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
+       //Serial.println("output onnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
        digitalWrite(OUTPUT_PIN, HIGH);
        outStateSensor1=false;
      }
@@ -371,14 +369,14 @@ void sensor1AcceptableTime(){
   return;
 }
 
-
+//If Acceptable time to Detect Object is Greater Than User Input Acceptable time than Output On Continuously Until it Detects the Object (for Sensor2 or Input2 only)
 void sensor2AcceptableTime(){
   static unsigned long lastOutTimeSensor2 = 0; 
   static bool outStateSensor2 = false;
   static unsigned long timeDifferenceSensor2 = 0;
   outTimeSensor2 = millis();
   if (objectDetectedSensor2 == true){
-    Serial.println("objectdetected");
+    //Serial.println("objectdetected");
     lastOutTimeSensor2 = outTimeSensor2;
     objectDetectedSensor2 = false;
     digitalWrite(OUTPUT_PIN, LOW);
@@ -389,7 +387,7 @@ void sensor2AcceptableTime(){
   //Output On continuously when Time needed by sensor2 to detect something is beyond Time Gap Inputed by User
   if (timeDifferenceSensor2 > storedAcceptTimeSeconds*1000UL){
      if(outStateSensor2==true){
-       Serial.println("output onnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
+       //Serial.println("output onnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
        digitalWrite(OUTPUT_PIN, HIGH);
        outStateSensor2=false;
      }
@@ -399,12 +397,12 @@ void sensor2AcceptableTime(){
 }
 
 
-//Output On For Seconds When Reset Button Pressed
+//Output On For Few Seconds When Reset Button Pressed
 void outputOnReset(){
   static unsigned long outTimeOn1Reset = 0;
   static bool outActiveOnReset = false; 
   if (waitingForReset == true ){
-    Serial.println("Resetttttttttttttt");
+    //Serial.println("Resetttttttttttttt");
     outTimeOn1Reset = millis();
     waitingForReset = false;
     digitalWrite(OUTPUT_PIN, HIGH);
@@ -414,12 +412,13 @@ void outputOnReset(){
   if (outActiveOnReset && (millis() - outTimeOn1Reset >=100UL)) {
     digitalWrite(OUTPUT_PIN, LOW);
     outActiveOnReset = false;
-    Serial.println("Output pin 10 turned OFF after seconds.");
+    //Serial.println("Output pin 10 turned OFF after seconds.");
   }
   return;
 
 }
 
+//Publish Mqtt Message of Time Taken by Sensor1 to Detect 1 Object After Another Continuously
 void TimeBetweenObject1(){
   if (objectPresent1 == true){
     static unsigned long lastOutTime1 = 0; 
@@ -436,6 +435,7 @@ void TimeBetweenObject1(){
   return;
 }
 
+//Publish Mqtt Message of Time Taken by Sensor2 to Detect 1 Object After Another Continuously
 void TimeBetweenObject2(){
   if (objectPresent2 == true){
     static unsigned long lastOutTime2 = 0; 
@@ -462,15 +462,14 @@ void onOffTimeSensor1(){
   if(isStateChanged1==true){
     isStateChanged1=false;
     if (currentStateSensor1==false && lastState1==true){
-      Serial.println("low to high");
+      //Serial.println("low to high");
       timeLow1=millis();
-      //Serial.println(timeLow1);
 
       if (timeHigh1!=0){
         timeOff=timeLow1-timeHigh1;
         Serial.println(timeOff);
         String timeOfff;
-        timeOfff += "OffTime1:" + String(timeOff);
+        timeOfff += "OffTime1 in mili seconds:" + String(timeOff);
         mqttClient.publish("kinjal/esp32/offtime1", timeOfff.c_str());
         Serial.println(timeOfff); 
         //Reset
@@ -484,9 +483,8 @@ void onOffTimeSensor1(){
       Serial.println("highhhhhhh");
       timeHigh1= millis();
       timeOn1=timeHigh1-timeLow1;
-      //Serial.println(timeOn1); 
       String timeOnn1;
-      timeOnn1 += "OnTimeLow1:" + String(timeOn1);
+      timeOnn1 += "OnTime1 in mili seconds:" + String(timeOn1);
       mqttClient.publish("kinjal/esp32/ontime1", timeOnn1.c_str());
       Serial.println(timeOnn1); 
       //Reset the time 
@@ -498,7 +496,7 @@ void onOffTimeSensor1(){
   }
 }
 
-//Publish Mqtt Data Of OFF and ON Time of Sensor1
+//Publish Mqtt Data Of OFF and ON Time of Sensor2
 void onOffTimeSensor2(){
   static bool lastState2= true; 
   static unsigned long timeLow2=0; 
@@ -508,15 +506,14 @@ void onOffTimeSensor2(){
   if(isStateChanged2==true){
     isStateChanged2=false;
     if (currentStateSensor2==false && lastState2==true){
-      Serial.println("low to high");
+      //Serial.println("low to high");
       timeLow2=millis();
-      //Serial.println(timeLow2);
 
       if (timeHigh2!=0){
         timeOff2=timeLow2-timeHigh2;
         Serial.println(timeOff2);
         String timeOfff2;
-        timeOfff2 += "OffTime:" + String(timeOff2);
+        timeOfff2 += "OffTime2 in mili seconds:" + String(timeOff2);
         mqttClient.publish("kinjal/esp32/offtime2", timeOfff2.c_str());
         Serial.println(timeOfff2); 
         //Reset
@@ -532,7 +529,7 @@ void onOffTimeSensor2(){
       timeOn2=timeHigh2-timeLow2;
       //Serial.println(timeOn2); 
       String timeOnn2;
-      timeOnn2 += "OnTime:" + String(timeOn2);
+      timeOnn2 += "OnTime2 in mili seconds:" + String(timeOn2);
       mqttClient.publish("kinjal/esp32/ontime2", timeOnn2.c_str());
       Serial.println(timeOnn2); 
       //Reset the time 
@@ -542,48 +539,3 @@ void onOffTimeSensor2(){
     }
   }
 }
-/*void proxi_counteron_Config(){
-  if (storedsensor1offon == 1 && storedsensor2offon == 1){// if both sensors are on
-    char msg2[50]; 
-      snprintf ( msg2, 50, " {\" %s \": %d ,\" %s \" : %d }", storedInput1 ,proxi_counter1, storedInput2, proxi_counter2);
-      mqtt_client.publish("kinjal/esp32/counter1", msg2);
-      Serial.println(msg2);
-  }
-  else if (storedsensor1offon == 2 && storedsensor2offon == 1){//if sensor1 is off and sensor2 is on
-    char msg2[50]; 
-    snprintf ( msg2, 50, " {\" %s \" : %d }", storedInput2, proxi_counter2);
-    mqtt_client.publish("kinjal/esp32/counter1", msg2);
-    Serial.println(msg2);
-
-  }
-  else if (storedsensor1offon == 1 && storedsensor2offon == 2){//if sensor1 is on and sensor2 off
-    char msg2[50]; 
-    snprintf ( msg2, 50, " {\" %s \" : %d }", storedInput1, proxi_counter1);
-    mqtt_client.publish("kinjal/esp32/counter1", msg2);
-    Serial.println(msg2);
-  }
-  else if (storedsensor1offon == 1 && storedsensor2offon == 3){//if sensor1 is on and sensor2 is reset switch for sensor1
-    char msg2[50]; 
-    snprintf ( msg2, 50, " {\" %s \": %d ,\" %s \" : %d }", storedInput1 ,proxi_counter1, storedInput2, proxi_counter2);
-    mqtt_client.publish("kinjal/esp32/counter1", msg2);
-    Serial.println(msg2);
-  }
-
-  else{
-    char msg2[50]; 
-    snprintf ( msg2, 50, " {no sensor on %d}", value );
-    mqtt_client.publish("kinjal/esp32/counter1", msg2);
-    Serial.println(msg2);
-
-  }
-
-
-
-
- return;
-
-}*/
-
-
-
-

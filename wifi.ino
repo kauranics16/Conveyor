@@ -33,3 +33,22 @@ void wifiConfig(){
   }
   return;
 }
+
+
+void wifiCheck(){
+  static unsigned long lastWifiCheck = 0;//Time line for Wifi Data Publish
+  if (millis() - lastWifiCheck > 5000) {
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("wifi Diconneted");
+      //Make Wifi of Esp Connect To Previously Connected Credencial OR If Not Connected Then Start AP Mode As Well for Credential From User
+      //WiFi.reconnect();
+      //WiFi.mode(WIFI_AP_STA);
+      //WiFi.softAP(SSID_AP, PASSWORD_AP);
+    } 
+    else {
+      Serial.println("wifi connected");
+    }
+    lastWifiCheck = millis();
+  }
+  return;
+}

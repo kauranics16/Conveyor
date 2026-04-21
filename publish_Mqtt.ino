@@ -1,4 +1,5 @@
 void mqttReconnectCheck(){
+  static unsigned long lastMqttCheck = 0;
   //Every 2 Seconds Try to reconnect
   if (!mqttClient.connected() && millis()- lastMqttCheck > 2000) {
     lastMqttCheck = millis();
@@ -14,7 +15,7 @@ void mqttReconnectCheck(){
       Serial.print("failed, rc=");
       Serial.print(mqttClient.state());
       // Wait 5 seconds before retrying
-      Serial.println(" try again in 5 seconds");
+      Serial.println(" try again in 2 seconds");
     }
   }
   return;
@@ -24,6 +25,7 @@ void mqttReconnectCheck(){
 
 void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
    //long now = millis();
+  static unsigned long lastMqttDataPub = 0;
   while (millis() - lastMqttDataPub > 2000) {
     lastMqttDataPub = millis();
     mqttDataCount++;

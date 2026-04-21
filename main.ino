@@ -34,6 +34,7 @@ void sensor2AcceptableTime();
 void outputOnReset();
 
 void wifiConfig();
+void wifiCheck();
 void webServerConfig();
 void mqttReconnectCheck();
 void mqttPublishData(bool *shiftCounter,bool *jsonCountOn);
@@ -58,9 +59,9 @@ uint8_t storedTimeBwObject;
 
 bool rightShiftStatus = false;//Whether User Inputed RightShift or LeftShift Choice Flag For Shift Count Publish 
 
-unsigned long lastMqttDataPub = 0;//Time line for Mqtt Data Publish 
-unsigned long lastWifiCheck = 0;//Time line for Wifi Data Publish
-unsigned long lastMqttCheck = 0;//Time line for Mqtt Reconnect in millis()
+//unsigned long lastMqttDataPub = 0;//Time line for Mqtt Data Publish 
+//unsigned long lastWifiCheck = 0;//Time line for Wifi Data Publish
+//unsigned long lastMqttCheck = 0;//Time line for Mqtt Reconnect in millis()
 
 unsigned int mqttDataCount = 0;//common count for every mqtt publish data
 volatile int32_t sensorCount = 0; //for both proximity detects one object than counter increments
@@ -99,12 +100,6 @@ volatile bool objectPresent2=false;
 
 volatile bool waitingForReset = false;// for reset output on function
 bool shouldRestartESP = false;  //used for esp restart input uis given through webserver
-
-
-
-
-
-
 
 
 
@@ -158,25 +153,14 @@ void loop() {
   }// Now send that local value to other functions using a pointer                                              
 
     
-
-  if (millis() - lastWifiCheck > 5000) {
-    if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("wifi Diconneted");
-      //Make Wifi of Esp Connect To Previously Connected Credencial OR If Not Connected Then Start AP Mode As Well for Credential From User
-      WiFi.reconnect();
-      WiFi.mode(WIFI_AP_STA);
-      WiFi.softAP(SSID_AP, PASSWORD_AP);
-
-    } else {
-      Serial.println("wifi connected");
-    }
-    lastWifiCheck = millis();
-  }
+  //Check Wifi Status
+  wifiCheck();
 
   //If Mqtt Not Connected  
   if (!mqttClient.connected()) {
     mqttReconnectCheck();
-  } else {
+  } 
+  else {
     //Make MQTT live Continuously
     mqttClient.loop();
     
@@ -205,6 +189,7 @@ void loop() {
     timeDiffAlertBetweenSensors();
   }
 
+  //If User Want On and Off Cycle Time of Sensor1, Sensor2, Both (Mqtt Publish)
   if (storedOnTimeChoice==1){
     onOffTimeSensor1();
   }
@@ -216,6 +201,7 @@ void loop() {
     onOffTimeSensor2();
   }
   
+  //if User Want Time taken by Sensor to Detect object Continuosly(Time between Object Detection)
   if(storedTimeBwObject==1){
     TimeBetweenObject1();
   }
