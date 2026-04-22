@@ -10,7 +10,6 @@ void wifiConfig(){
     // Wait 10 seconds for connection
     int retry = 0;
     while (WiFi.status() != WL_CONNECTED && retry < 20) {
-      delay(500);
       Serial.print(".");
       retry++;
     }
@@ -27,9 +26,6 @@ void wifiConfig(){
   else {
     Serial.println("\nWiFi Connected!");
     Serial.print("Local IP: "); Serial.println(WiFi.localIP());
-    //Optional: keep AP running even when connected
-    //WiFi.mode(WIFI_AP_STA); 
-    //WiFi.softAP(ssid_ap, password_ap);
   }
   return;
 }
@@ -42,7 +38,7 @@ void wifiCheck(){
       Serial.println("wifi Diconneted");
       //Make Wifi of Esp Connect To Previously Connected Credencial OR If Not Connected Then Start AP Mode As Well for Credential From User
       //WiFi.reconnect();
-      //WiFi.mode(WIFI_AP_STA);
+      WiFi.mode(WIFI_AP_STA);
       //WiFi.softAP(SSID_AP, PASSWORD_AP);
     } 
     else {

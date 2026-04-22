@@ -43,7 +43,7 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
 
     if (*jsonCounterOn == true){
       /// if both sensors are on
-      if (storedSensor1OnChoice == true && storedSensor2OnChoice == 1){
+      if (sensor1State == STATE_ON  && sensor2State == STATE_ON){
       
       String counterMsg = "{";
       counterMsg+= "\"" + String(storedSensor1Name) + "\":" + String(sensor1Count) + ",";
@@ -52,24 +52,24 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
       mqttClient.publish("kinjal/esp32/counter1", counterMsg.c_str());
       Serial.println(counterMsg);
       }
-      //if sensor1 is off and sensor2 is on
-      else if (storedSensor1OnChoice== false && storedSensor2OnChoice == 1){
+      
+      else if (sensor1State == STATE_OFF && sensor2State == STATE_ON){
         String counterMsg = "{";
         counterMsg += "\"" + String(storedSensor2Name) + "\":" + String(sensor2Count);
         counterMsg += "}";
         mqttClient.publish("kinjal/esp32/counter1", counterMsg.c_str());
         Serial.println(counterMsg);
       }
-      //if sensor1 is on and sensor2 off
-      else if (storedSensor1OnChoice == true && storedSensor2OnChoice == 2){
+      
+      else if (sensor1State == STATE_ON && sensor2State == STATE_OFF){
         String counterMsg = "{";
         counterMsg += "\"" + String(storedSensor1Name) + "\":" + String(sensor1Count);
         counterMsg += "}";
         mqttClient.publish("kinjal/esp32/counter1", counterMsg.c_str());
         Serial.println(counterMsg);
       }
-      //if sensor1 is on and sensor2 is reset switch for sensor1 counter
-      else if (storedSensor1OnChoice == true && storedSensor2OnChoice == 3){
+      
+      else if (sensor1State == STATE_ON && sensor2State == STATE_RESET){
         String counterMsg = "{";
         counterMsg+= "\"" + String(storedSensor1Name) + "\":" + String(sensor1Count) + ",";
         counterMsg += "\"" + String(storedSensor2Name) + "\":" + String(sensor2Count);
@@ -77,7 +77,7 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
         mqttClient.publish("kinjal/esp32/counter1", counterMsg.c_str());
         Serial.println(counterMsg);
       }
-      //If no Sensor On
+      
       else{
         String counterMsg = "No Sensor Found";
         mqttClient.publish("kinjal/esp32/counter1", counterMsg.c_str());

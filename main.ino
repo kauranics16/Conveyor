@@ -5,9 +5,9 @@
 #include <PubSubClient.h>
 //#include <ArduinoJson.h>
 
-#define PROX_SENSOR1 6//pin 6 as Input of Esp32c3
-#define PROX_SENSOR2 7//pin 7 as Input of Esp32c3
-#define OUTPUT_PIN 10//pin 10 as Output of Esp32c3
+#define PROX_SENSOR1 6
+#define PROX_SENSOR2 7
+#define OUTPUT_PIN 10
 
 Preferences preferences;
 AsyncWebServer server(80);
@@ -43,11 +43,29 @@ void TimeBetweenObject2();
 void onOffTimeSensor1();
 void onOffTimeSensor2();
 
+// --------- Enum defination And Declaration--------
+typedef enum SensorState : uint8_t{
+  STATE_ON,
+  STATE_OFF,
+  STATE_RESET
+}sensorState;
+sensorState sensor1State = STATE_OFF;
+sensorState sensor2State = STATE_OFF;
+
+typedef enum SensorType : bool{
+  TYPE_NO,
+  TYPE_NC
+}sensorType;
+
+typedef enum SensorMode : bool{
+  MODE_RISING,
+  MODE_FALLING
+}sensorMode;
+
+
 // --------- Global variables --------
 String storedSensor1Name;
 String storedSensor2Name;
-bool storedSensor1OnChoice;
-uint8_t storedSensor2OnChoice;
 bool storedSensorShiftChoise;
 uint8_t storedSensorTimeDiffSeconds;
 
@@ -58,10 +76,6 @@ uint8_t storedOnTimeChoice;
 uint8_t storedTimeBwObject;
 
 bool rightShiftStatus = false;//Whether User Inputed RightShift or LeftShift Choice Flag For Shift Count Publish 
-
-//unsigned long lastMqttDataPub = 0;//Time line for Mqtt Data Publish 
-//unsigned long lastWifiCheck = 0;//Time line for Wifi Data Publish
-//unsigned long lastMqttCheck = 0;//Time line for Mqtt Reconnect in millis()
 
 unsigned int mqttDataCount = 0;//common count for every mqtt publish data
 volatile int32_t sensorCount = 0; //for both proximity detects one object than counter increments

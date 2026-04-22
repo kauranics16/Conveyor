@@ -13,7 +13,6 @@ const char* htmlForm = R"rawliteral(
  <input type="radio"  name="myGroup2" value=2> NC<br>
  Sensor1 Mode:<input type="radio"  name="sensormode1" value=1>FALLING
  <input type="radio"  name="sensormode1" value=2> RISING
- <input type="radio"  name="sensormode1" value=3> CHANGE<br>
  InputSensor2 Name:<br><input type="text" name="input2"><br>
  <input type="radio"  name="myGroup1" value=1> ON Sensor2
  <input type="radio"  name="myGroup1" value=2> OFF Sensor2
@@ -22,7 +21,6 @@ const char* htmlForm = R"rawliteral(
  <input type="radio"  name="myGroup3" value=2> NC<br>
  Sensor2 Mode:<input type="radio"  name="sensormode2" value=1>FALLING
  <input type="radio"  name="sensormode2" value=2> RISING
- <input type="radio"  name="sensormode2" value=3> CHANGE<br>
  Shift Choice: <input type="radio"  name="Shifting" value=1> Sensor1 to Sensor2 Right Shift
  <input type="radio"  name="Shifting" value=2> Sensor2 to Sensor1 Left Shift<br>
  Left Right Shift Count Choice: <input type="radio"  name="Shiftcount" value=1> ON
@@ -71,9 +69,9 @@ void webServerConfig(){
       String p = request->getParam("pass", true)->value();
       String inputSensor1Name = request->getParam("input1", true)->value();
       String inputSensor2Name = request->getParam("input2", true)->value();
-      uint8_t sensor1Mode = request->getParam("sensormode1", true)->value().toInt();
+      bool sensor1Modew = (request->getParam("sensormode1", true)->value()== "1") ? true : false;
       //String sensor1Mode = request->getParam("sensormode1", true)->value(); 
-      uint8_t sensor2Mode = request->getParam("sensormode2", true)->value().toInt();
+      bool sensor2Modew = (request->getParam("sensormode2", true)->value()== "1") ? true : false;
       bool sensor1OnChoice = (request->getParam("myGroup", true)->value()== "1") ? true : false;
       uint8_t sensor2OnChoice = request->getParam("myGroup1", true)->value().toInt();
       bool sensor1NoNcChoice = (request->getParam("myGroup2", true)->value()== "1") ? true : false;
@@ -95,25 +93,16 @@ void webServerConfig(){
       if (s=="" && p==""){
         request->send(200, "text/html", "<h3>SSID And Password not Provided</h3>");
       }
-      
-      
       else{
-        
         if (inputSensor1Name==""){inputSensor1Name="sensor1";}
         if (inputSensor2Name==""){ inputSensor2Name="sensor2";}
-        /*if (sensor1Mode==""){
-          bool sensor1Mode=false;
-        }
-        else{
-           bool sensor1Mode =(sensor1Mode == "1") ? true : false;}*/
+  
        
 
     
       Serial.println("input by user:");
       Serial.println(inputSensor1Name);
       Serial.println(inputSensor2Name);
-      Serial.println(sensor1Mode);
-      Serial.println(sensor2Mode);
       Serial.println(sensor1OnChoice);
       Serial.println(sensor2OnChoice);
       Serial.println(sensor1NoNcChoice);
@@ -128,8 +117,8 @@ void webServerConfig(){
       preferences.begin("sensor", false);
       preferences.putString("InputSensor_1", inputSensor1Name);
       preferences.putString("InputSensor_2",inputSensor2Name);
-      preferences.putInt("Sensor_1mode", sensor1Mode);
-      preferences.putInt("Sensor_2mode", sensor2Mode);
+      preferences.putBool("Sensor_1mode", sensor1Modew);
+      preferences.putBool("Sensor_2mode", sensor2Modew);
       preferences.putBool("Sensor1onoff", sensor1OnChoice);
       preferences.putInt("Sensor2onoff", sensor2OnChoice);
       preferences.putBool("Sensor1nonc", sensor1NoNcChoice);

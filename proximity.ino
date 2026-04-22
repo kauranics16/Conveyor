@@ -50,10 +50,10 @@ void configInputOutput(){
   preferences.begin("sensor", true);
   storedSensor1Name = preferences.getString("InputSensor_1", "");
   storedSensor2Name = preferences.getString("InputSensor_2", "");
-  uint8_t storedInput1Mode=preferences.getInt("Sensor_1mode", 0);
-  uint8_t storedInput2Mode=preferences.getInt("Sensor_2mode", 0);
-  storedSensor1OnChoice=preferences.getBool("Sensor1onoff", false);
-  storedSensor2OnChoice=preferences.getInt("Sensor2onoff", 0);
+  bool storedInput1Mode=preferences.getBool("Sensor_1mode", false);
+  bool storedInput2Mode=preferences.getBool("Sensor_2mode", false);
+  bool storedSensor1OnChoice=preferences.getBool("Sensor1onoff", false);
+  uint8_t storedSensor2OnChoice=preferences.getInt("Sensor2onoff", 0);
   bool storedSensor1NoNcChoice=preferences.getBool("Sensor1nonc", false);
   bool storedSensor2NoNcChoice=preferences.getBool("Sensor2nonc", false);
   storedSensorShiftChoise=preferences.getBool("Sensorshift", false);
@@ -68,90 +68,130 @@ void configInputOutput(){
   storedOnTimeChoice=preferences.getInt("sensorOnOffTime",0);      
   preferences.end();
 
+  //Sensor1 On or OFF
+  if (storedSensor1OnChoice == true){
+    sensor1State = STATE_ON;
+  }
+  //Sensor2 On or OFF or Reset
+  if (storedSensor2OnChoice == 1){
+    sensor2State = STATE_ON;
+  }
+  else if (storedSensor2OnChoice == 2){
+    sensor2State = STATE_OFF;
+  }
+  else{
+    sensor2State = STATE_RESET;
+  }
+
+  //Sensor1 Type is NO or NC
+  sensorType sensor1Type;
+  sensorType sensor2Type;
+  if(storedSensor1NoNcChoice == true){
+    sensor1Type = TYPE_NO;
+  }
+  else{
+    sensor1Type = TYPE_NC;
+  }
+ 
+  //Sensor2 Type is NO or NC
+  if(storedSensor2NoNcChoice == true){
+    sensor2Type = TYPE_NO;
+  }
+  else{
+    sensor2Type = TYPE_NC;
+  }
+
+  sensorMode sensor1Mode;
+  sensorMode sensor2Mode;
+  if (storedInput1Mode == true){
+    sensor1Mode = MODE_FALLING;
+  }
+  else{
+    sensor1Mode = MODE_RISING;
+  }
+  if (storedInput1Mode == true){
+    sensor2Mode = MODE_FALLING;
+  }
+  else{
+    sensor2Mode = MODE_RISING;
+  }
+
 
   //If In Sensor1 mode
-  if (storedSensor1OnChoice == true){
-    if(storedSensor1NoNcChoice == true){
-      if (storedInput1Mode == 1){
+  if (sensor1State == STATE_ON){
+    if(sensor1Type == TYPE_NO){
+      if (sensor1Mode == MODE_FALLING){
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, FALLING );
       }
-      else if (storedInput1Mode == 2){
+      else {
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, RISING );
-      }
-      else{
-        attachInterrupt(PROX_SENSOR1, Sensor1Time_ISR, CHANGE );
       }
     }
-    else{
-      if (storedInput1Mode == 2){
+    else {
+      if (sensor1Mode == MODE_RISING){
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, RISING );
       }
-      else if (storedInput1Mode == 1){
+      else {
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, FALLING );
       }
-      else{
-        attachInterrupt(PROX_SENSOR1, Sensor1Time_ISR, CHANGE );
-      }
-
     }
-    
   }
 
   //If Input2 Is In Sensor2 mode
-  if (storedSensor2OnChoice == 1){
-    if(storedSensor2NoNcChoice == true){
-      if (storedInput2Mode == 1){
+  if (sensor2State == STATE_ON){
+    if(sensor2Type == TYPE_NO){
+      if (sensor2Mode == MODE_FALLING){
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, FALLING );
       }
-      else if (storedInput2Mode == 2){
+      else {
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, RISING );
-      }
-      else{
-        attachInterrupt(PROX_SENSOR2, Sensor2Time_ISR, CHANGE );
       }
     }
     else{//If NC Choosen 
-      if (storedInput2Mode == 2){
+      if (sensor2Mode == MODE_RISING){
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, RISING );
       }
-      else if (storedInput2Mode == 1){
+      else {
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, FALLING );
       }
-      else{
-        attachInterrupt(PROX_SENSOR2, Sensor2Time_ISR, CHANGE );
-      }
-
     }
-    
   }
 
   // If Input2 Is In Reset Mode (Button)
-  if (storedSensor2OnChoice == 3){
-    if(storedSensor2NoNcChoice == true){
-      if (storedInput2Mode == 1){
+  if (sensor2State == STATE_RESET){
+    if(sensor2Type == TYPE_NO){
+      if (sensor2Mode == MODE_FALLING){
         attachInterrupt(PROX_SENSOR2, RESET_ISR, FALLING );
       }
       else if (storedInput2Mode == 2){
         attachInterrupt(PROX_SENSOR2, RESET_ISR, RISING );
       }
-      else{
-        attachInterrupt(PROX_SENSOR2, Sensor2Time_ISR, CHANGE );
-      }
     }
     else{//IF NC choosen for sensor
-      if (storedInput1Mode == 2){
+      if (sensor2Mode == MODE_RISING){
         attachInterrupt(PROX_SENSOR2, RESET_ISR, RISING );
       }
-      else if (storedInput2Mode == 1){
+      else {
         attachInterrupt(PROX_SENSOR2, RESET_ISR, FALLING );
       }
-      else{
-        attachInterrupt(PROX_SENSOR2, Sensor2Time_ISR, CHANGE );
-      }
-
-    }
-    
+    } 
   }
+
+
+  if (storedOnTimeChoice==1){
+    attachInterrupt(PROX_SENSOR1, Sensor1Time_ISR, CHANGE );
+  }
+  else if (storedOnTimeChoice==2){
+    attachInterrupt(PROX_SENSOR2, Sensor2Time_ISR, CHANGE );
+  }
+  else if (storedOnTimeChoice==3){
+    attachInterrupt(PROX_SENSOR1, Sensor1Time_ISR, CHANGE );
+    attachInterrupt(PROX_SENSOR2, Sensor2Time_ISR, CHANGE );
+  }
+  
+  
+        
+  
 
 
   //Output On or OFF
