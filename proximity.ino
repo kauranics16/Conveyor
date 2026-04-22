@@ -1,21 +1,21 @@
 void ARDUINO_ISR_ATTR Proximity1_ISR() {//Intterupt Service Routine for Input1 (Sensor1)
   sensor1Count++;
-  sensor1TimeMqttPub = millis();
+  //sensor1TimeMqttPub = millis();
   sensor1TimeTriggered = millis();
   objectDetectedSensor1 = true;
   objectPresent1=true;
-  sensor1MqttPub = true;
+  //sensor1MqttPub = true; 
   sensor1TriggeredAlert = true;
   sensor1Shift = true;
 }
 
 void ARDUINO_ISR_ATTR Proximity2_ISR() {//Interrupt Service Routine of Input2 (Sensor2)
   sensor2Count++;
-  sensor2TimeMqttPub= millis();
+  //sensor2TimeMqttPub= millis();
   sensor2TimeTriggered = millis();
   objectDetectedSensor2 = true;
   objectPresent2=true;
-  sensor2MqttPub = true;
+  //sensor2MqttPub = true;
   sensor2TriggeredAlert = true;
   sensor2Shift = true;
 }
@@ -27,6 +27,16 @@ void ARDUINO_ISR_ATTR RESET_ISR() {// Interupt Routine for Input2 as Reset Butto
   sensor2Shift = true;
   
 }
+
+void ARDUINO_ISR_ATTR TIMEDIFF_ISR() {// Interupt Routine for Input2 as Reset Button
+  //sensor2Count++;
+  sensor2MqttPub = true;
+  sensor1MqttPub = true;
+  unsigned long time = millis();
+  sensor2TimeMqttPub= time;
+  sensor1TimeMqttPub = time;
+}
+
 
 // Interrupt Service Routine (ISR)
 void ARDUINO_ISR_ATTR Sensor1Time_ISR() {
@@ -56,17 +66,23 @@ void configInputOutput(){
   uint8_t storedSensor2OnChoice=preferences.getInt("Sensor2onoff", 0);
   bool storedSensor1NoNcChoice=preferences.getBool("Sensor1nonc", false);
   bool storedSensor2NoNcChoice=preferences.getBool("Sensor2nonc", false);
-  storedSensorShiftChoise=preferences.getBool("Sensorshift", false);
+  bool storedSensorShiftChoise=preferences.getBool("Sensorshift", false);
   storedAcceptTimeSelect = preferences.getInt("individual", 0);
   storedAcceptTimeSeconds=preferences.getInt("accepttime", 0);
   storedSensorTriggerOut=preferences.getBool("outputtrig", false);
-  storedMqttPubSensorTimeDiff=preferences.getBool("outputpublish", false);
+  publishTimeDiffAlert_p=preferences.getBool("outputpublish", false);
   storedSensorDiffOut=preferences.getBool("outputalert", false);
   storedSensorTimeDiffSeconds = preferences.getInt("proxi_time",0);
   bool storedOutputChoice=preferences.getBool("Outputonoff",false);
   storedTimeBwObject=preferences.getInt("timeBwObject",false);
   storedOnTimeChoice=preferences.getInt("sensorOnOffTime",0);      
   preferences.end();
+ 
+  //---Enum Local Varaibles----
+  sensorType sensor1Type;
+  sensorType sensor2Type;
+  sensorMode sensor1Mode;
+  sensorMode sensor2Mode;
 
   //Sensor1 On or OFF
   if (storedSensor1OnChoice == true){
@@ -84,8 +100,6 @@ void configInputOutput(){
   }
 
   //Sensor1 Type is NO or NC
-  sensorType sensor1Type;
-  sensorType sensor2Type;
   if(storedSensor1NoNcChoice == true){
     sensor1Type = TYPE_NO;
   }
@@ -101,8 +115,7 @@ void configInputOutput(){
     sensor2Type = TYPE_NC;
   }
 
-  sensorMode sensor1Mode;
-  sensorMode sensor2Mode;
+  //Falling and Rising Mode Selection
   if (storedInput1Mode == true){
     sensor1Mode = MODE_FALLING;
   }
@@ -116,12 +129,23 @@ void configInputOutput(){
     sensor2Mode = MODE_RISING;
   }
 
+  if (storedSensorShiftChoise == true){
+    shiftMode =  RIGHT_SHIFT;
+  }
+  else{
+    shiftMode =  LEFT_SHIFT;
+  }
+
 
   //If In Sensor1 mode
   if (sensor1State == STATE_ON){
     if(sensor1Type == TYPE_NO){
       if (sensor1Mode == MODE_FALLING){
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, FALLING );
+        if (publishTimeDiffAlert_p == true){
+          attachInterrupt(PROX_SENSOR1, TIMEDIFF_ISR, FALLING );
+        }
+        
       }
       else {
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, RISING );

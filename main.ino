@@ -43,14 +43,12 @@ void TimeBetweenObject2();
 void onOffTimeSensor1();
 void onOffTimeSensor2();
 
-// --------- Enum defination And Declaration--------
+// --------- Enum defination --------
 typedef enum SensorState : uint8_t{
   STATE_ON,
   STATE_OFF,
   STATE_RESET
 }sensorState;
-sensorState sensor1State = STATE_OFF;
-sensorState sensor2State = STATE_OFF;
 
 typedef enum SensorType : bool{
   TYPE_NO,
@@ -62,21 +60,34 @@ typedef enum SensorMode : bool{
   MODE_FALLING
 }sensorMode;
 
+typedef enum ShiftMode : bool{
+  RIGHT_SHIFT,
+  LEFT_SHIFT
+}shiftChoice;
+
+typedef enum MqttChoice : uint8_t{
+  SENSOR1_ONLY,
+  SENSOR2_ONLY,
+  BOTH_SENSORS,
+  OFF
+}mqttChoice;
+
+// --------- Enum declaration--------
+sensorState sensor1State = STATE_OFF;
+sensorState sensor2State = STATE_OFF;
+shiftChoice shiftMode;
 
 // --------- Global variables --------
 String storedSensor1Name;
 String storedSensor2Name;
-bool storedSensorShiftChoise;
 uint8_t storedSensorTimeDiffSeconds;
-
 bool storedSensorTriggerOut;//User input of whether the user want the output on for few seconds when sensor detectes something
 bool storedSensorDiffOut;//User input of ALERT Output "ON" when the sensor Difference exceeds thresold given by user
-bool storedMqttPubSensorTimeDiff ;//User input if user want to Publish the Alert message on Mqtt or Not
+bool publishTimeDiffAlert_p ;//User input if user want to Publish the Alert message on Mqtt or Not
 uint8_t storedOnTimeChoice;
 uint8_t storedTimeBwObject;
 
-bool rightShiftStatus = false;//Whether User Inputed RightShift or LeftShift Choice Flag For Shift Count Publish 
-
+//Counters
 unsigned int mqttDataCount = 0;//common count for every mqtt publish data
 volatile int32_t sensorCount = 0; //for both proximity detects one object than counter increments
 volatile int32_t sensor1Count = 0;//Sensor1 Count to Publish when needed
@@ -104,11 +115,13 @@ volatile bool objectDetectedSensor1 = false;//object detected status
 unsigned long outTimeSensor2 = 0;////for Acceptable time sensor2
 volatile bool objectDetectedSensor2 = false;//object detected status
 
-volatile bool currentStateSensor1;//or 
+//On and Off Cycle 
+volatile bool currentStateSensor1; 
 volatile bool isStateChanged1 = false;
-volatile bool currentStateSensor2;//or 
+volatile bool currentStateSensor2; 
 volatile bool isStateChanged2 = false;
 
+//Object time Difference Publish Time Varaible
 volatile bool objectPresent1=false;
 volatile bool objectPresent2=false;
 
@@ -183,6 +196,7 @@ void loop() {
   }
 
   //If User Wants the Ouput when Sensor Sense Something
+
   if(storedSensorTriggerOut==true){
     sensorTriggerOutputOn();
   }

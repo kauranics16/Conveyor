@@ -12,7 +12,7 @@ const char* htmlForm = R"rawliteral(
  <input type="radio"  name="myGroup2" value=1> NO
  <input type="radio"  name="myGroup2" value=2> NC<br>
  Sensor1 Mode:<input type="radio"  name="sensormode1" value=1>FALLING
- <input type="radio"  name="sensormode1" value=2> RISING
+ <input type="radio"  name="sensormode1" value=2> RISING<br>
  InputSensor2 Name:<br><input type="text" name="input2"><br>
  <input type="radio"  name="myGroup1" value=1> ON Sensor2
  <input type="radio"  name="myGroup1" value=2> OFF Sensor2
@@ -20,7 +20,7 @@ const char* htmlForm = R"rawliteral(
  <input type="radio"  name="myGroup3" value=1> NO
  <input type="radio"  name="myGroup3" value=2> NC<br>
  Sensor2 Mode:<input type="radio"  name="sensormode2" value=1>FALLING
- <input type="radio"  name="sensormode2" value=2> RISING
+ <input type="radio"  name="sensormode2" value=2> RISING<br>
  Shift Choice: <input type="radio"  name="Shifting" value=1> Sensor1 to Sensor2 Right Shift
  <input type="radio"  name="Shifting" value=2> Sensor2 to Sensor1 Left Shift<br>
  Left Right Shift Count Choice: <input type="radio"  name="Shiftcount" value=1> ON
@@ -70,7 +70,6 @@ void webServerConfig(){
       String inputSensor1Name = request->getParam("input1", true)->value();
       String inputSensor2Name = request->getParam("input2", true)->value();
       bool sensor1Modew = (request->getParam("sensormode1", true)->value()== "1") ? true : false;
-      //String sensor1Mode = request->getParam("sensormode1", true)->value(); 
       bool sensor2Modew = (request->getParam("sensormode2", true)->value()== "1") ? true : false;
       bool sensor1OnChoice = (request->getParam("myGroup", true)->value()== "1") ? true : false;
       uint8_t sensor2OnChoice = request->getParam("myGroup1", true)->value().toInt();
@@ -88,7 +87,6 @@ void webServerConfig(){
       uint8_t sensorIndividualAcceptTimeInput = request->getParam("accepttime", true)->value().toInt();
       uint8_t timeBetweenObject=request->getParam("objectdetect", true)->value().toInt();
       uint8_t sensorOnOffTime = request->getParam("onofftime", true)->value().toInt();
-      //bool proxiShiftCounterOnChoice = (request->getParam("Shiftcount", true)->value() == "1") ? true : false;
       
       if (s=="" && p==""){
         request->send(200, "text/html", "<h3>SSID And Password not Provided</h3>");
@@ -96,21 +94,6 @@ void webServerConfig(){
       else{
         if (inputSensor1Name==""){inputSensor1Name="sensor1";}
         if (inputSensor2Name==""){ inputSensor2Name="sensor2";}
-  
-       
-
-    
-      Serial.println("input by user:");
-      Serial.println(inputSensor1Name);
-      Serial.println(inputSensor2Name);
-      Serial.println(sensor1OnChoice);
-      Serial.println(sensor2OnChoice);
-      Serial.println(sensor1NoNcChoice);
-      Serial.println(sensor2NoNcChoice);
-      Serial.println(sensorShiftChoice);
-      Serial.println(proxiCounterOnChoice);
-      Serial.println(outputOnChoice);
-      Serial.println(sensorOnOffTime);
 
       
       //store in preference
@@ -146,9 +129,8 @@ void webServerConfig(){
       request->send(200, "text/html", "<h3>Credentials Saved. Restarting...</h3>");
       Serial.println("+++++++++++++++++++++++++++++++++++++++++++++++");
      
-      shouldRestartESP = true; }
-      //delay(5000);
-      //ESP.restart();
+      shouldRestartESP = true; 
+      }
     }
   });
  

@@ -1,15 +1,15 @@
 void wifiConfig(){
   preferences.begin("mywifi", true);
-   String storedSSID = preferences.getString("ssid", "");
-   String storedPass = preferences.getString("password", "");
+  String storedSSID = preferences.getString("ssid", "");
+  String storedPass = preferences.getString("password", "");
   preferences.end();
   if (storedSSID != "") {
     Serial.println("Attempting to connect to: " + storedSSID);
     WiFi.begin(storedSSID.c_str(), storedPass.c_str());
- 
     // Wait 10 seconds for connection
     int retry = 0;
     while (WiFi.status() != WL_CONNECTED && retry < 20) {
+      delay(500);
       Serial.print(".");
       retry++;
     }

@@ -86,13 +86,9 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
     }
 
 
-    //If Right shift Choosen
-    if (storedSensorShiftChoise == true){
-      rightShiftStatus = true;
-      sensorShiftRight();
-       
+    if (shiftMode ==  RIGHT_SHIFT){
+      sensorShiftRight();  
     }
-    //If Left Shift Choosen
     else{
       sensorShiftLeft();
     }
@@ -100,7 +96,7 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
     //if User Need Counter on Left and Right Shift
     //For both proximity detects one object than counter increments
     if (*shiftCount == true){
-       if(rightShiftStatus == true){
+       if(shiftMode ==  RIGHT_SHIFT){
        
        String counterShift;
        counterShift += "ShiftRightCounter:" +  String(sensorCount);
@@ -116,7 +112,7 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
     }
 
     //If User Want Mqtt message of Time Difference Alert
-    if (storedMqttPubSensorTimeDiff==true){
+    if (publishTimeDiffAlert_p==true){
        acceptableTimeAlert();
     }
     
