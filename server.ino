@@ -1,5 +1,5 @@
 
-const char* htmlForm = R"rawliteral(
+const char *htmlForm = R"rawliteral(
 <!DOCTYPE HTML><html><head>
  <title>Wi-Fi Setup</title>
  <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -58,82 +58,82 @@ const char* htmlForm = R"rawliteral(
 
 
 
-void webServerConfig(){
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){// "/" means the host ip address
-  request->send(200, "text/html", htmlForm);
+void webServerConfig() {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {  // "/" means the host ip address
+    request->send(200, "text/html", htmlForm);
   });
- 
-  server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request){
-    if (request->hasParam("ssid", true) && request->hasParam("pass", true)  ) {
+
+  server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("ssid", true) && request->hasParam("pass", true)) {
       String s = request->getParam("ssid", true)->value();
       String p = request->getParam("pass", true)->value();
       String inputSensor1Name = request->getParam("input1", true)->value();
       String inputSensor2Name = request->getParam("input2", true)->value();
-      bool sensor1Modew = (request->getParam("sensormode1", true)->value()== "1") ? true : false;
-      bool sensor2Modew = (request->getParam("sensormode2", true)->value()== "1") ? true : false;
-      bool sensor1OnChoice = (request->getParam("myGroup", true)->value()== "1") ? true : false;
+      bool sensor1Modew = (request->getParam("sensormode1", true)->value() == "1") ? true : false;
+      bool sensor2Modew = (request->getParam("sensormode2", true)->value() == "1") ? true : false;
+      bool sensor1OnChoice = (request->getParam("myGroup", true)->value() == "1") ? true : false;
       uint8_t sensor2OnChoice = request->getParam("myGroup1", true)->value().toInt();
-      bool sensor1NoNcChoice = (request->getParam("myGroup2", true)->value()== "1") ? true : false;
-      bool sensor2NoNcChoice = (request->getParam("myGroup3", true)->value()== "1") ? true : false;
-      bool sensorShiftChoice = (request->getParam("Shifting", true)->value()== "1") ? true : false;//from sensor1 to sensor2 or sensor2 to sensor1
-      bool proxiCounterOnChoice = (request->getParam("proxicounteronoff", true)->value()== "1") ? true : false;// choise to wherether to publish sensor individual count i.e sensor1 : 1 , sensor2 :2..
-      bool proxiShiftCounterOnChoice = (request->getParam("Shiftcount", true)->value()== "1") ? true : false;;
-      uint8_t sensorUserTimeDifference= request->getParam("seconds", true)->value().toInt();
-      bool outputOnChoice = (request->getParam("onoff", true)->value()== "1") ? true : false;
-      bool sensorIndividualTriggerOutputon = (request->getParam("outputtrig", true)->value()== "1") ? true : false;
-      bool sensorDifferenceAlertMqttPublish = (request->getParam("outputpublish", true)->value()== "1") ? true : false;
-      bool sensorDiffOutputAlerton = (request->getParam("outputalert", true)->value()== "1") ? true : false;
+      bool sensor1NoNcChoice = (request->getParam("myGroup2", true)->value() == "1") ? true : false;
+      bool sensor2NoNcChoice = (request->getParam("myGroup3", true)->value() == "1") ? true : false;
+      bool sensorShiftChoice = (request->getParam("Shifting", true)->value() == "1") ? true : false;              //from sensor1 to sensor2 or sensor2 to sensor1
+      bool proxiCounterOnChoice = (request->getParam("proxicounteronoff", true)->value() == "1") ? true : false;  // choise to wherether to publish sensor individual count i.e sensor1 : 1 , sensor2 :2..
+      bool proxiShiftCounterOnChoice = (request->getParam("Shiftcount", true)->value() == "1") ? true : false;
+      uint8_t sensorUserTimeDifference = request->getParam("seconds", true)->value().toInt();
+      bool outputOnChoice = (request->getParam("onoff", true)->value() == "1") ? true : false;
+      bool sensorIndividualTriggerOutputon = (request->getParam("outputtrig", true)->value() == "1") ? true : false;
+      bool sensorDifferenceAlertMqttPublish = (request->getParam("outputpublish", true)->value() == "1") ? true : false;
+      bool sensorDiffOutputAlerton = (request->getParam("outputalert", true)->value() == "1") ? true : false;
       uint8_t sensorIndividualAcceptTimeSelect = request->getParam("individual", true)->value().toInt();
       uint8_t sensorIndividualAcceptTimeInput = request->getParam("accepttime", true)->value().toInt();
-      uint8_t timeBetweenObject=request->getParam("objectdetect", true)->value().toInt();
+      uint8_t timeBetweenObject = request->getParam("objectdetect", true)->value().toInt();
       uint8_t sensorOnOffTime = request->getParam("onofftime", true)->value().toInt();
-      
-      if (s=="" && p==""){
+
+      if (s == "" && p == "") {
         request->send(200, "text/html", "<h3>SSID And Password not Provided</h3>");
-      }
-      else{
-        if (inputSensor1Name==""){inputSensor1Name="sensor1";}
-        if (inputSensor2Name==""){ inputSensor2Name="sensor2";}
+      } 
+      else {
+        if (inputSensor1Name == "") { inputSensor1Name = "sensor1"; }
+        if (inputSensor2Name == "") { inputSensor2Name = "sensor2"; }
 
-      
-      //store in preference
-      preferences.begin("sensor", false);
-      preferences.putString("InputSensor_1", inputSensor1Name);
-      preferences.putString("InputSensor_2",inputSensor2Name);
-      preferences.putBool("Sensor_1mode", sensor1Modew);
-      preferences.putBool("Sensor_2mode", sensor2Modew);
-      preferences.putBool("Sensor1onoff", sensor1OnChoice);
-      preferences.putInt("Sensor2onoff", sensor2OnChoice);
-      preferences.putBool("Sensor1nonc", sensor1NoNcChoice);
-      preferences.putBool("Sensor2nonc", sensor2NoNcChoice);
-      preferences.putBool("Sensorshift", sensorShiftChoice);
-      preferences.putBool("proxionoff", proxiCounterOnChoice);
-      preferences.putBool("Shiftcount", proxiShiftCounterOnChoice);
-      preferences.putInt("proxi_time",sensorUserTimeDifference );
-      preferences.putBool("Outputonoff", outputOnChoice);
-      preferences.putBool("outputtrig",sensorIndividualTriggerOutputon);
-      preferences.putBool("outputpublish",sensorDifferenceAlertMqttPublish);
-      preferences.putBool("outputalert",sensorDiffOutputAlerton);
-      preferences.putInt("individual",sensorIndividualAcceptTimeSelect);
-      preferences.putInt("accepttime",sensorIndividualAcceptTimeInput);
-      preferences.putInt("timeBwObject",timeBetweenObject);
-      preferences.putInt("sensorOnOffTime",sensorOnOffTime);
-      preferences.end();
 
-      
-      preferences.begin("mywifi", false);
-      preferences.putString("ssid", s);
-      preferences.putString("password", p);
-      preferences.end();
- 
-      request->send(200, "text/html", "<h3>Credentials Saved. Restarting...</h3>");
-      Serial.println("+++++++++++++++++++++++++++++++++++++++++++++++");
-     
-      shouldRestartESP = true; 
+        //store in preference
+        preferences.begin("sensor", false);
+        preferences.putString("InputSensor_1", inputSensor1Name);
+        preferences.putString("InputSensor_2", inputSensor2Name);
+        preferences.putBool("Sensor_1mode", sensor1Modew);
+        preferences.putBool("Sensor_2mode", sensor2Modew);
+        preferences.putBool("Sensor1onoff", sensor1OnChoice);
+        preferences.putInt("Sensor2onoff", sensor2OnChoice);
+        preferences.putBool("Sensor1nonc", sensor1NoNcChoice);
+        preferences.putBool("Sensor2nonc", sensor2NoNcChoice);
+        preferences.putBool("Sensorshift", sensorShiftChoice);
+        preferences.putBool("proxionoff", proxiCounterOnChoice);
+        preferences.putBool("Shiftcount", proxiShiftCounterOnChoice);
+        preferences.putInt("proxi_time", sensorUserTimeDifference);
+        preferences.putBool("Outputonoff", outputOnChoice);
+        preferences.putBool("outputtrig", sensorIndividualTriggerOutputon);
+        preferences.putBool("outputpublish", sensorDifferenceAlertMqttPublish);
+        preferences.putBool("outputalert", sensorDiffOutputAlerton);
+        preferences.putInt("individual", sensorIndividualAcceptTimeSelect);
+        preferences.putInt("accepttime", sensorIndividualAcceptTimeInput);
+        preferences.putInt("timeBwObject", timeBetweenObject);
+        preferences.putInt("sensorOnOffTime", sensorOnOffTime);
+        preferences.end();
+
+
+        preferences.begin("mywifi", false);
+        preferences.putString("ssid", s);
+        preferences.putString("password", p);
+        preferences.end();
+
+        request->send(200, "text/html", "<h3>Credentials Saved. Restarting...</h3>");
+        Serial.println("+++++++++++++++++++++++++++++++++++++++++++++++");
+
+        shouldRestartESP = true;
       }
     }
   });
- 
+
   server.begin();
   return;
 }
