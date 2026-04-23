@@ -8,8 +8,6 @@ void mqttReconnectCheck(){
     // Does not require the username and Password
     if (mqttClient.connect(mqttClientId)) { 
       Serial.println("connected");
-      // Subscribe to a topic
-      //client.subscribe("esp32/test/kinjal_mqtt_topic");
     } 
     else {
       Serial.print("failed, rc=");
@@ -23,14 +21,14 @@ void mqttReconnectCheck(){
 
 
 
-void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
+void mqttPublishData(){//Publish Mqtt Data
    //long now = millis();
   static unsigned long lastMqttDataPub = 0;
   while (millis() - lastMqttDataPub > 2000) {
     lastMqttDataPub = millis();
     mqttDataCount++;
     Serial.println("----------------------------------------------------------------+");
-     Serial.println(storedTimeBwObject);
+    
     // DynamicJsonDocument doc(1024);or                             
     /*JsonDocument doc;
     doc[storedInput1] = 0;
@@ -41,7 +39,7 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
     mqtt_client.publish("kinjal/esp32/countertype", buffer);*/
 
 
-    if (*jsonCounterOn == true){
+    if (storedJsonCounterOn == true){
       /// if both sensors are on
       if (sensor1State == STATE_ON  && sensor2State == STATE_ON){
       
@@ -95,7 +93,7 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
     
     //if User Need Counter on Left and Right Shift
     //For both proximity detects one object than counter increments
-    if (*shiftCount == true){
+    if (storedShiftCounterOn == true){
        if(shiftMode ==  RIGHT_SHIFT){
        
        String counterShift;
@@ -112,7 +110,7 @@ void mqttPublishData(bool *shiftCount,bool *jsonCounterOn ){//Publish Mqtt Data
     }
 
     //If User Want Mqtt message of Time Difference Alert
-    if (publishTimeDiffAlert_p==true){
+    if (storedPubTimeDiffAlert==true){
        acceptableTimeAlert();
     }
     

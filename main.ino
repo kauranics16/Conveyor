@@ -37,11 +37,14 @@ void wifiConfig();
 void wifiCheck();
 void webServerConfig();
 void mqttReconnectCheck();
-void mqttPublishData(bool *shiftCounter,bool *jsonCountOn);
+void mqttPublishData();
 void TimeBetweenObject1();
 void TimeBetweenObject2();
 void onOffTimeSensor1();
 void onOffTimeSensor2();
+
+void handleSensor1Isr();
+void handleSensor2Isr();
 
 // --------- Enum defination --------
 typedef enum SensorState : uint8_t{
@@ -69,23 +72,26 @@ typedef enum MqttChoice : uint8_t{
   SENSOR1_ONLY,
   SENSOR2_ONLY,
   BOTH_SENSORS,
-  OFF
+  OFF_STATE
 }mqttChoice;
 
 // --------- Enum declaration--------
 sensorState sensor1State = STATE_OFF;
 sensorState sensor2State = STATE_OFF;
 shiftChoice shiftMode;
+mqttChoice pubTimeBwObject=OFF_STATE;
+mqttChoice pubOnOffCycle=OFF_STATE;
 
 // --------- Global variables --------
 String storedSensor1Name;
 String storedSensor2Name;
+bool storedShiftCounterOn;
+bool storedJsonCounterOn;
 uint8_t storedSensorTimeDiffSeconds;
 bool storedSensorTriggerOut;//User input of whether the user want the output on for few seconds when sensor detectes something
 bool storedSensorDiffOut;//User input of ALERT Output "ON" when the sensor Difference exceeds thresold given by user
-bool publishTimeDiffAlert_p ;//User input if user want to Publish the Alert message on Mqtt or Not
-uint8_t storedOnTimeChoice;
-uint8_t storedTimeBwObject;
+bool storedPubTimeDiffAlert;//User input if user want to Publish the Alert message on Mqtt or Not
+
 
 //Counters
 unsigned int mqttDataCount = 0;//common count for every mqtt publish data
@@ -125,9 +131,12 @@ volatile bool isStateChanged2 = false;
 volatile bool objectPresent1=false;
 volatile bool objectPresent2=false;
 
+//ISR Main flag to handle other flags 
+volatile bool sensor1Isr=false;
+volatile bool sensor2Isr=false;
+
 volatile bool waitingForReset = false;// for reset output on function
 bool shouldRestartESP = false;  //used for esp restart input uis given through webserver
-
 
 
 // =============================================================
@@ -163,23 +172,6 @@ void loop() {
     ESP.restart();  
     return;
   }
-  
-  
-  static bool isFirstRun = true;
-  static bool storedUserInputProxiShiftCounterOn; 
-  static bool storedUserInputSensorProxiJsonCounterOn;
-
-  //Runns When Loop Runs First Time
-  if (isFirstRun == true) {
-    preferences.begin("sensor", true);
-    storedUserInputProxiShiftCounterOn = preferences.getBool("Shiftcount", false);
-    storedUserInputSensorProxiJsonCounterOn=preferences.getBool("proxionoff", false);
-    preferences.end();
-    Serial.print("beiiiiiiiii ");
-    isFirstRun = false;
-  }// Now send that local value to other functions using a pointer                                              
-
-    
   //Check Wifi Status
   wifiCheck();
 
@@ -191,12 +183,22 @@ void loop() {
     //Make MQTT live Continuously
     mqttClient.loop();
     
+  
     //Publish Mqtt Data
-    mqttPublishData(&storedUserInputProxiShiftCounterOn,&storedUserInputSensorProxiJsonCounterOn);
+    mqttPublishData();
   }
 
-  //If User Wants the Ouput when Sensor Sense Something
+  //Handle the Extra Isr Variables for Function
+  if(sensor1Isr==true){
+    handleSensor1Isr();
+    sensor1Isr=false;
+  }
+  if(sensor2Isr == true){
+    handleSensor2Isr();
+    sensor2Isr=false;}
+  
 
+  //If User Wants the Ouput when Sensor Sense Something
   if(storedSensorTriggerOut==true){
     sensorTriggerOutputOn();
   }
@@ -218,25 +220,25 @@ void loop() {
   }
 
   //If User Want On and Off Cycle Time of Sensor1, Sensor2, Both (Mqtt Publish)
-  if (storedOnTimeChoice==1){
+  if (pubOnOffCycle == SENSOR1_ONLY){
     onOffTimeSensor1();
   }
-  else if (storedOnTimeChoice==2){
+  else if (pubOnOffCycle == SENSOR2_ONLY){
     onOffTimeSensor2();
   }
-  else if (storedOnTimeChoice==3){
+  else if (pubOnOffCycle == BOTH_SENSORS ){
     onOffTimeSensor1();
     onOffTimeSensor2();
   }
   
   //if User Want Time taken by Sensor to Detect object Continuosly(Time between Object Detection)
-  if(storedTimeBwObject==1){
+  if(pubTimeBwObject == SENSOR1_ONLY){
     TimeBetweenObject1();
   }
-  else if(storedTimeBwObject==2){
+  else if(pubTimeBwObject == SENSOR2_ONLY){
     TimeBetweenObject2();
   }
-  else if(storedTimeBwObject==3){
+  else if(pubTimeBwObject == BOTH_SENSORS){
     TimeBetweenObject1();
     TimeBetweenObject2();
   }

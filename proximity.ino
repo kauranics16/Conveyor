@@ -1,42 +1,47 @@
 void ARDUINO_ISR_ATTR Proximity1_ISR() {//Intterupt Service Routine for Input1 (Sensor1)
   sensor1Count++;
-  //sensor1TimeMqttPub = millis();
+  sensor1Isr = true; 
   sensor1TimeTriggered = millis();
-  objectDetectedSensor1 = true;
-  objectPresent1=true;
-  //sensor1MqttPub = true; 
   sensor1TriggeredAlert = true;
-  sensor1Shift = true;
 }
 
 void ARDUINO_ISR_ATTR Proximity2_ISR() {//Interrupt Service Routine of Input2 (Sensor2)
   sensor2Count++;
-  //sensor2TimeMqttPub= millis();
+  sensor2Isr = true;
   sensor2TimeTriggered = millis();
-  objectDetectedSensor2 = true;
-  objectPresent2=true;
-  //sensor2MqttPub = true;
   sensor2TriggeredAlert = true;
-  sensor2Shift = true;
 }
 
 void ARDUINO_ISR_ATTR RESET_ISR() {// Interupt Routine for Input2 as Reset Button
   sensor1Count=0;
   sensor2Count++;
   waitingForReset = true;
-  sensor2Shift = true;
-  
 }
 
-void ARDUINO_ISR_ATTR TIMEDIFF_ISR() {// Interupt Routine for Input2 as Reset Button
-  //sensor2Count++;
-  sensor2MqttPub = true;
+void ARDUINO_ISR_ATTR TIMEDIFF1_ISR() {// Interupt Routine for Mqtt Publish 
+  sensor1Count++;
   sensor1MqttPub = true;
-  unsigned long time = millis();
-  sensor2TimeMqttPub= time;
-  sensor1TimeMqttPub = time;
+  sensor1TimeMqttPub = millis();
 }
 
+void ARDUINO_ISR_ATTR TIMEDIFF2_ISR() {// Interupt Routine for 
+  sensor2Count++;
+  sensor2MqttPub = true;
+  sensor2TimeMqttPub= millis();
+}
+
+//To Handle Extra variables of ISR
+void handleSensor1Isr(){
+  sensor1Shift = true;
+  objectPresent1 = true;
+  objectDetectedSensor1 = true;
+}
+
+void handleSensor2Isr(){
+  sensor2Shift = true;
+  objectPresent2=true;
+  objectDetectedSensor2 = true;
+}
 
 // Interrupt Service Routine (ISR)
 void ARDUINO_ISR_ATTR Sensor1Time_ISR() {
@@ -44,7 +49,6 @@ void ARDUINO_ISR_ATTR Sensor1Time_ISR() {
   currentStateSensor1=digitalRead(6);
   sensor1Count++;
   sensor1Shift = true;
-  //Other variable as per Requirement
 }
 
 void ARDUINO_ISR_ATTR Sensor2Time_ISR() {
@@ -52,7 +56,6 @@ void ARDUINO_ISR_ATTR Sensor2Time_ISR() {
   currentStateSensor2=digitalRead(7);
   sensor2Count++;
   sensor2Shift = true;
-  //Other variable as per Requirement
 }
 
 //Configure and Load all data stored in Esp32 Memory
@@ -67,18 +70,20 @@ void configInputOutput(){
   bool storedSensor1NoNcChoice=preferences.getBool("Sensor1nonc", false);
   bool storedSensor2NoNcChoice=preferences.getBool("Sensor2nonc", false);
   bool storedSensorShiftChoise=preferences.getBool("Sensorshift", false);
+  storedShiftCounterOn = preferences.getBool("Shiftcount", false);
+  storedJsonCounterOn=preferences.getBool("proxionoff", false);
   storedAcceptTimeSelect = preferences.getInt("individual", 0);
   storedAcceptTimeSeconds=preferences.getInt("accepttime", 0);
   storedSensorTriggerOut=preferences.getBool("outputtrig", false);
-  publishTimeDiffAlert_p=preferences.getBool("outputpublish", false);
+  storedPubTimeDiffAlert=preferences.getBool("outputpublish", false);
   storedSensorDiffOut=preferences.getBool("outputalert", false);
   storedSensorTimeDiffSeconds = preferences.getInt("proxi_time",0);
   bool storedOutputChoice=preferences.getBool("Outputonoff",false);
-  storedTimeBwObject=preferences.getInt("timeBwObject",false);
-  storedOnTimeChoice=preferences.getInt("sensorOnOffTime",0);      
+  uint8_t storedTimeBwObject=preferences.getInt("timeBwObject",false);
+  uint8_t storedOnTimeChoice=preferences.getInt("sensorOnOffTime",0);      
   preferences.end();
  
-  //---Enum Local Varaibles----
+  //---Enum Local Varaibles and Assigning State (Decision)---
   sensorType sensor1Type;
   sensorType sensor2Type;
   sensorMode sensor1Mode;
@@ -137,26 +142,57 @@ void configInputOutput(){
   }
 
 
+   //If User Want On and Off Cycle Time of Sensor1, Sensor2, Both (Mqtt Publish)
+  if (storedOnTimeChoice == 1){
+    pubOnOffCycle = SENSOR1_ONLY;
+  }
+  else if (storedOnTimeChoice == 2){
+    pubOnOffCycle = SENSOR2_ONLY;
+  }
+  else if (storedOnTimeChoice == 3){
+    pubOnOffCycle = BOTH_SENSORS;
+  }
+  
+  //if User Want Time taken by Sensor to Detect object Continuosly(Time between Object Detection)
+  if(storedTimeBwObject == 1){
+    pubTimeBwObject = SENSOR1_ONLY;
+  }
+  else if(storedTimeBwObject == 2){
+    pubTimeBwObject = SENSOR2_ONLY;
+  }
+  else if(storedTimeBwObject == 3){
+    pubTimeBwObject = BOTH_SENSORS;
+  }
+
+
   //If In Sensor1 mode
   if (sensor1State == STATE_ON){
     if(sensor1Type == TYPE_NO){
       if (sensor1Mode == MODE_FALLING){
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, FALLING );
-        if (publishTimeDiffAlert_p == true){
-          attachInterrupt(PROX_SENSOR1, TIMEDIFF_ISR, FALLING );
-        }
-        
+        if (storedPubTimeDiffAlert == true){
+          attachInterrupt(PROX_SENSOR1, TIMEDIFF1_ISR, FALLING );
+        }   
       }
       else {
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, RISING );
+        if (storedPubTimeDiffAlert == true){
+          attachInterrupt(PROX_SENSOR1, TIMEDIFF1_ISR, RISING );
+        } 
       }
     }
     else {
       if (sensor1Mode == MODE_RISING){
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, RISING );
+        if (storedPubTimeDiffAlert == true){
+          attachInterrupt(PROX_SENSOR1, TIMEDIFF1_ISR, RISING );
+        } 
       }
       else {
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, FALLING );
+        if (storedPubTimeDiffAlert == true){
+          attachInterrupt(PROX_SENSOR1, TIMEDIFF1_ISR, FALLING );
+        } 
       }
     }
   }
@@ -166,17 +202,29 @@ void configInputOutput(){
     if(sensor2Type == TYPE_NO){
       if (sensor2Mode == MODE_FALLING){
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, FALLING );
+        if (storedPubTimeDiffAlert == true){
+          attachInterrupt(PROX_SENSOR2, TIMEDIFF2_ISR, FALLING );
+        } 
       }
       else {
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, RISING );
+        if (storedPubTimeDiffAlert == true){
+          attachInterrupt(PROX_SENSOR2, TIMEDIFF2_ISR, RISING );
+        } 
       }
     }
     else{//If NC Choosen 
       if (sensor2Mode == MODE_RISING){
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, RISING );
+        if (storedPubTimeDiffAlert == true){
+          attachInterrupt(PROX_SENSOR2, TIMEDIFF2_ISR, RISING );
+        }
       }
       else {
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, FALLING );
+        if (storedPubTimeDiffAlert == true){
+          attachInterrupt(PROX_SENSOR2, TIMEDIFF2_ISR, FALLING );
+        }
       }
     }
   }
@@ -212,35 +260,25 @@ void configInputOutput(){
     attachInterrupt(PROX_SENSOR1, Sensor1Time_ISR, CHANGE );
     attachInterrupt(PROX_SENSOR2, Sensor2Time_ISR, CHANGE );
   }
-  
-  
-        
-  
-
+ 
 
   //Output On or OFF
   if (storedOutputChoice==true){
     pinMode(OUTPUT_PIN, OUTPUT);
-    Serial.println("output ON mmmmmmmmm");
   }
-
-
   return;
-
 }
 
 
 //Sensor Shift Right is Choosen by User
 void sensorShiftRight(){
   if (sensor1Shift == false && sensor2Shift == true) {
-    Serial.print("metal detected");
     sensor1Shift = false;
     sensor2Shift = false;
   }
     
   //If Sensor 1 Detects Then And Only Than sensor2 Detects And Count Incremented For Shift Count
   if (sensor1Shift  && sensor2Shift == true) {
-    Serial.print("metal detected");
     sensorCount++;
     Serial.print(sensorCount);
     Serial.println(" times.");
@@ -266,14 +304,12 @@ void sensorShiftRight(){
 //Sensor Shift Left is Choosen by User
 void sensorShiftLeft(){
   if (sensor1Shift == true && sensor2Shift == false) {
-    Serial.print("metal detected");
     sensor1Shift = false;
     sensor2Shift = false;
   }
     
   //If Sensor 2 Detects Then And Only Than sensor1 Detects And Count Incremented For Shift Count
   if (sensor1Shift  && sensor2Shift == true) { 
-    Serial.print("metal detected");
     sensorCount++;
     Serial.print(sensorCount);
     Serial.println(" times.");
@@ -343,6 +379,7 @@ void acceptableTimeAlert(){
     sensor1TimeMqttPub=0;
     sensor2TimeMqttPub=0;
   }
+
           
   return;
 }
@@ -354,7 +391,6 @@ void timeDiffAlertBetweenSensors(){
   static unsigned long timeDifferenceAlert=0;
   static unsigned long outTimeOn1SensorDiff = 0;
   if (sensor1TriggeredAlert==true && sensor2TriggeredAlert == true){
-    Serial.println("hhhhhhhhhhhhdddddddddd");
     outTimeOn1SensorDiff = millis();
     sensor1TriggeredAlert = false;
     sensor2TriggeredAlert = false;
@@ -370,10 +406,7 @@ void timeDiffAlertBetweenSensors(){
   if (timeDifferenceAlert > storedSensorTimeDiffSeconds*1000UL){
     digitalWrite(OUTPUT_PIN, HIGH);
     outActiveOnSensorDiff = true;
-    Serial.println("555555555555555555555f5554545sss5");
-    Serial.println(millis() - outTimeOn1SensorDiff);
     if (outActiveOnSensorDiff && (millis() - outTimeOn1SensorDiff >= 1000UL)) {//Buzzer on 1000 mili seconds
-      Serial.println("lowwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww");
       digitalWrite(OUTPUT_PIN, LOW);
       outActiveOnSensorDiff = false;
       Serial.println("Output pin 10 turned OFF after 2 seconds.");
@@ -415,7 +448,6 @@ void sensor1AcceptableTime(){
   static unsigned long timeDifferenceSensor1 = 0;
   outTimeSensor1 = millis();
   if (objectDetectedSensor1 == true){
-    //Serial.println("objectdetected");
     lastOutTimeSensor1 = outTimeSensor1;
     objectDetectedSensor1 = false;
     digitalWrite(OUTPUT_PIN, LOW);
@@ -425,7 +457,6 @@ void sensor1AcceptableTime(){
   //Output On continuously when Time needed by sensor1 to detect something is beyond Time Gap Inputed by User
   if (timeDifferenceSensor1>storedAcceptTimeSeconds*1000UL){
      if(outStateSensor1==true){
-       //Serial.println("output onnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
        digitalWrite(OUTPUT_PIN, HIGH);
        outStateSensor1=false;
      }
@@ -440,7 +471,6 @@ void sensor2AcceptableTime(){
   static unsigned long timeDifferenceSensor2 = 0;
   outTimeSensor2 = millis();
   if (objectDetectedSensor2 == true){
-    //Serial.println("objectdetected");
     lastOutTimeSensor2 = outTimeSensor2;
     objectDetectedSensor2 = false;
     digitalWrite(OUTPUT_PIN, LOW);
@@ -451,7 +481,6 @@ void sensor2AcceptableTime(){
   //Output On continuously when Time needed by sensor2 to detect something is beyond Time Gap Inputed by User
   if (timeDifferenceSensor2 > storedAcceptTimeSeconds*1000UL){
      if(outStateSensor2==true){
-       //Serial.println("output onnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
        digitalWrite(OUTPUT_PIN, HIGH);
        outStateSensor2=false;
      }
@@ -466,7 +495,6 @@ void outputOnReset(){
   static unsigned long outTimeOn1Reset = 0;
   static bool outActiveOnReset = false; 
   if (waitingForReset == true ){
-    //Serial.println("Resetttttttttttttt");
     outTimeOn1Reset = millis();
     waitingForReset = false;
     digitalWrite(OUTPUT_PIN, HIGH);
@@ -476,7 +504,6 @@ void outputOnReset(){
   if (outActiveOnReset && (millis() - outTimeOn1Reset >=100UL)) {
     digitalWrite(OUTPUT_PIN, LOW);
     outActiveOnReset = false;
-    //Serial.println("Output pin 10 turned OFF after seconds.");
   }
   return;
 
@@ -491,7 +518,7 @@ void TimeBetweenObject1(){
     timeDifference1 = millis() -  lastOutTime1;
     lastOutTime1 = millis();
     String timeDiff1;
-    timeDiff1 += "TimeDifference:" + String(timeDifference1);
+    timeDiff1 += "TimeDifference1:" + String(timeDifference1);
     mqttClient.publish("kinjal/esp32/timediff1", timeDiff1.c_str());
     Serial.println(timeDiff1);
     timeDifference1 =0;
@@ -508,7 +535,7 @@ void TimeBetweenObject2(){
     timeDifference2 = millis() -  lastOutTime2;
     lastOutTime2 = millis();
     String timeDiff2;
-    timeDiff2 += "TimeDifference:" + String(timeDifference2);
+    timeDiff2 += "TimeDifference2:" + String(timeDifference2);
     mqttClient.publish("kinjal/esp32/timediff2", timeDiff2.c_str());
     Serial.println(timeDiff2);
     timeDifference2 =0;
@@ -525,10 +552,8 @@ void onOffTimeSensor1(){
   static unsigned long timeOff=0; 
   if(isStateChanged1==true){
     isStateChanged1=false;
-    if (currentStateSensor1==false && lastState1==true){
-      //Serial.println("low to high");
+    if (currentStateSensor1==false && lastState1==true){//"low to high"
       timeLow1=millis();
-
       if (timeHigh1!=0){
         timeOff=timeLow1-timeHigh1;
         Serial.println(timeOff);
@@ -544,7 +569,6 @@ void onOffTimeSensor1(){
       lastState1=false;
     }
     else if (currentStateSensor1==true && lastState1==false ){//ON state
-      Serial.println("highhhhhhh");
       timeHigh1= millis();
       timeOn1=timeHigh1-timeLow1;
       String timeOnn1;
@@ -570,9 +594,7 @@ void onOffTimeSensor2(){
   if(isStateChanged2==true){
     isStateChanged2=false;
     if (currentStateSensor2==false && lastState2==true){
-      //Serial.println("low to high");
       timeLow2=millis();
-
       if (timeHigh2!=0){
         timeOff2=timeLow2-timeHigh2;
         Serial.println(timeOff2);
@@ -587,11 +609,9 @@ void onOffTimeSensor2(){
       }
       lastState2=false;
     }
-    else if (currentStateSensor2==true && lastState2==false ){//ON state
-      Serial.println("highhhhhhh");
+    else if (currentStateSensor2==true && lastState2==false ){//ON state (high)
       timeHigh2= millis();
-      timeOn2=timeHigh2-timeLow2;
-      //Serial.println(timeOn2); 
+      timeOn2=timeHigh2-timeLow2;; 
       String timeOnn2;
       timeOnn2 += "OnTime2 in mili seconds:" + String(timeOn2);
       mqttClient.publish("kinjal/esp32/ontime2", timeOnn2.c_str());
@@ -603,3 +623,5 @@ void onOffTimeSensor2(){
     }
   }
 }
+
+
