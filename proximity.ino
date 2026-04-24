@@ -87,11 +87,11 @@ void configInputOutput() {
   sensorMode sensor1Mode;
   sensorMode sensor2Mode;
 
-  //Sensor1 On or OFF
+  
   if (storedSensor1OnChoice == true) {
     sensor1State = STATE_ON;
   }
-  //Sensor2 On or OFF or Reset
+ 
   if (storedSensor2OnChoice == 1) {
     sensor2State = STATE_ON;
   } else if (storedSensor2OnChoice == 2) {
@@ -100,21 +100,21 @@ void configInputOutput() {
     sensor2State = STATE_RESET;
   }
 
-  //Sensor1 Type is NO or NC
+  
   if (storedSensor1NoNcChoice == true) {
     sensor1Type = TYPE_NO;
   } else {
     sensor1Type = TYPE_NC;
   }
 
-  //Sensor2 Type is NO or NC
+
   if (storedSensor2NoNcChoice == true) {
     sensor2Type = TYPE_NO;
   } else {
     sensor2Type = TYPE_NC;
   }
 
-  //Falling and Rising Mode Selection
+ 
   if (storedInput1Mode == true) {
     sensor1Mode = MODE_FALLING;
   } else {
@@ -133,7 +133,7 @@ void configInputOutput() {
   }
 
 
-  //If User Want On and Off Cycle Time of Sensor1, Sensor2, Both (Mqtt Publish)
+  
   if (storedOnTimeChoice == 1) {
     pubOnOffCycle = SENSOR1_ONLY;
   } else if (storedOnTimeChoice == 2) {
@@ -142,7 +142,7 @@ void configInputOutput() {
     pubOnOffCycle = BOTH_SENSORS;
   }
 
-  //if User Want Time taken by Sensor to Detect object Continuosly(Time between Object Detection)
+  
   if (storedTimeBwObject == 1) {
     pubTimeBwObject = SENSOR1_ONLY;
   } else if (storedTimeBwObject == 2) {
@@ -151,7 +151,7 @@ void configInputOutput() {
     pubTimeBwObject = BOTH_SENSORS;
   }
 
-  //If User Wants the Ouput when Sensor Sense Something
+  
   if (storedSensorTriggerOut == true) {
     onSensorTrigger = OUTPUT_ON;
   }
@@ -171,7 +171,7 @@ void configInputOutput() {
 
 
 
-  //If In Sensor1 mode
+ //   Sensor Configuration as per User Need                                                         
   if (sensor1State == STATE_ON) {
     if (sensor1Type == TYPE_NO) {
       if (sensor1Mode == MODE_FALLING) {
@@ -277,18 +277,6 @@ void sensorShiftRight() {
     sensorCount++;
     Serial.print(sensorCount);
     Serial.println(" times.");
-    /*if (Sensor1TimeWhenTriggered > Sensor2TimeWhenTriggered){
-      timeDiffInSensors = Sensor1TimeWhenTriggered - Sensor2TimeWhenTriggered;
-    }
-    else{
-      timeDiffInSensors = Sensor2TimeWhenTriggered - Sensor1TimeWhenTriggered;
-    }
-
-    if (storedMqttPubSensorTimeDiff==1){
-      AcceptableTime();
-    }
-    Sensor1TimeWhenTriggered = 0;
-    Sensor2TimeWhenTriggered = 0;*/
     sensor1Shift = false;
     sensor2Shift = false;
   }
@@ -308,48 +296,11 @@ void sensorShiftLeft() {
     sensorCount++;
     Serial.print(sensorCount);
     Serial.println(" times.");
-    /*if (Sensor1TimeWhenTriggered > Sensor2TimeWhenTriggered){
-      timeDiffInSensors = Sensor1TimeWhenTriggered - Sensor2TimeWhenTriggered;
-    }
-    else{
-      timeDiffInSensors= Sensor2TimeWhenTriggered- Sensor1TimeWhenTriggered;
-    }
-      
-    if (storedMqttPubSensorTimeDiff==1){
-      AcceptableTime();
-    }
-    Sensor1TimeWhenTriggered = 0;
-    Sensor2TimeWhenTriggered=0;*/
     sensor1Shift = false;
     sensor2Shift = false;
   }
   return;
 }
-
-/*
-/// Integrated with RightShift, leftShift Function for MqttPublish Alert on Time Difference Gap (Same Conveyor) (MqttPublish data)
-void AcceptableTime(){
-
-  if (timeDiffInSensors > storedSensorTimeDiffSeconds*1000UL){
-    char msg3[50];
-    snprintf(msg3, 50, "Time difference not Acceptable: %d", sensorCount);
-    mqttClient.publish("kinjal/esp32/time", msg3);
-    Serial.println(msg3);
-
-    timeDiffInSensors = 0;  
-  }
-  else{
-
-    char msg3[50];
-    snprintf(msg3, 50, "Time difference Acceptable: %d", sensorCount);
-    mqttClient.publish("kinjal/esp32/time", msg3);
-    Serial.println(msg3);
-    timeDiffInSensors = 0;
-  }
-  //TimeDifference=0;
-  return;
-}*/
-
 
 
 //Time Difference Between Sensors MqttPublish Alert Message (Different Conveyor)
