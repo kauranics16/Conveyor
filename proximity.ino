@@ -1,15 +1,11 @@
-void ARDUINO_ISR_ATTR Proximity1_ISR() {  //Intterupt Service Routine for Input1 (Sensor1)
+void ARDUINO_ISR_ATTR Proximity1_ISR() {  //Intterupt Service Routine for Input1 (Sensor1) and time difference alert
   sensor1Count++;
   sensor1Isr = true;
-  sensor1TimeTriggered = millis();
-  sensor1TriggeredAlert = true;
 }
 
-void ARDUINO_ISR_ATTR Proximity2_ISR() {  //Interrupt Service Routine of Input2 (Sensor2)
+void ARDUINO_ISR_ATTR Proximity2_ISR() {  //Interrupt Service Routine of Input2 (Sensor2) and time difference alert
   sensor2Count++;
   sensor2Isr = true;
-  sensor2TimeTriggered = millis();
-  sensor2TriggeredAlert = true;
 }
 
 void ARDUINO_ISR_ATTR RESET_ISR() {  // Interupt Routine for Input2 as Reset Button
@@ -18,16 +14,26 @@ void ARDUINO_ISR_ATTR RESET_ISR() {  // Interupt Routine for Input2 as Reset But
   waitingForReset = true;
 }
 
-void ARDUINO_ISR_ATTR TIMEDIFF1_ISR() {  // Interupt Routine for Mqtt Publish
+void ARDUINO_ISR_ATTR TIMEDIFF1_ISR() {  // Interupt Routine for Mqtt Publish Time Difference between sensor
   sensor1Count++;
   sensor1MqttPub = true;
   sensor1TimeMqttPub = millis();
 }
 
-void ARDUINO_ISR_ATTR TIMEDIFF2_ISR() {  // Interupt Routine for
-  sensor2Count++;
+void ARDUINO_ISR_ATTR TIMEDIFF2_ISR() {  // Interupt Routine for Mqtt Publish Time Difference between sensor
   sensor2MqttPub = true;
   sensor2TimeMqttPub = millis();
+}
+
+void ARDUINO_ISR_ATTR TIMEDIFFOUT1_ISR() {  // Interupt Routine for Output On Time Difference Between Sensor
+  sensor1TimeTriggered = millis();
+  sensor1TriggeredAlert = true;
+}
+
+void ARDUINO_ISR_ATTR TIMEDIFFOUT2_ISR() {  // Interupt Routine for Output On Time Difference Between Sensor
+  sensor1TimeTriggered = millis();
+  sensor2TimeTriggered = millis();
+  sensor2TriggeredAlert = true;
 }
 
 //To Handle Extra variables of ISR
@@ -87,11 +93,11 @@ void configInputOutput() {
   sensorMode sensor1Mode;
   sensorMode sensor2Mode;
 
-  
+
   if (storedSensor1OnChoice == true) {
     sensor1State = STATE_ON;
   }
- 
+
   if (storedSensor2OnChoice == 1) {
     sensor2State = STATE_ON;
   } else if (storedSensor2OnChoice == 2) {
@@ -100,7 +106,7 @@ void configInputOutput() {
     sensor2State = STATE_RESET;
   }
 
-  
+
   if (storedSensor1NoNcChoice == true) {
     sensor1Type = TYPE_NO;
   } else {
@@ -114,7 +120,7 @@ void configInputOutput() {
     sensor2Type = TYPE_NC;
   }
 
- 
+
   if (storedInput1Mode == true) {
     sensor1Mode = MODE_FALLING;
   } else {
@@ -133,7 +139,7 @@ void configInputOutput() {
   }
 
 
-  
+
   if (storedOnTimeChoice == 1) {
     pubOnOffCycle = SENSOR1_ONLY;
   } else if (storedOnTimeChoice == 2) {
@@ -142,7 +148,7 @@ void configInputOutput() {
     pubOnOffCycle = BOTH_SENSORS;
   }
 
-  
+
   if (storedTimeBwObject == 1) {
     pubTimeBwObject = SENSOR1_ONLY;
   } else if (storedTimeBwObject == 2) {
@@ -151,7 +157,7 @@ void configInputOutput() {
     pubTimeBwObject = BOTH_SENSORS;
   }
 
-  
+
   if (storedSensorTriggerOut == true) {
     onSensorTrigger = OUTPUT_ON;
   }
@@ -160,18 +166,18 @@ void configInputOutput() {
     onSensorsTimeDiff = OUTPUT_ON;
   }
 
-  //User Selection of Acceptable Time Sensor1, Acceptable Time sensor2, Reset Mode
+  //   User Selection of Acceptable Time Sensor1, Acceptable Time sensor2, Reset Mode
   if (storedAcceptTimeSelect == 1) {
     outputOnAcceptTime = SENSOR1;
   } else if (storedAcceptTimeSelect == 2) {
-     outputOnAcceptTime = SENSOR2;
+    outputOnAcceptTime = SENSOR2;
   } else if (storedAcceptTimeSelect == 3) {
     outputOnAcceptTime = RESET;
   }
 
 
 
- //   Sensor Configuration as per User Need                                                         
+  //Sensor Configuration as per User Need
   if (sensor1State == STATE_ON) {
     if (sensor1Type == TYPE_NO) {
       if (sensor1Mode == MODE_FALLING) {
@@ -179,10 +185,17 @@ void configInputOutput() {
         if (storedPubTimeDiffAlert == true) {
           attachInterrupt(PROX_SENSOR1, TIMEDIFF1_ISR, FALLING);
         }
+        if (onSensorsTimeDiff == OUTPUT_ON) {
+          attachInterrupt(PROX_SENSOR1, TIMEDIFFOUT1_ISR, FALLING);
+        }
+
       } else {
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, RISING);
         if (storedPubTimeDiffAlert == true) {
           attachInterrupt(PROX_SENSOR1, TIMEDIFF1_ISR, RISING);
+        }
+        if (onSensorsTimeDiff == OUTPUT_ON) {
+          attachInterrupt(PROX_SENSOR1, TIMEDIFFOUT1_ISR, RISING);
         }
       }
     } else {
@@ -191,10 +204,16 @@ void configInputOutput() {
         if (storedPubTimeDiffAlert == true) {
           attachInterrupt(PROX_SENSOR1, TIMEDIFF1_ISR, RISING);
         }
+        if (onSensorsTimeDiff == OUTPUT_ON) {
+          attachInterrupt(PROX_SENSOR1, TIMEDIFFOUT1_ISR, RISING);
+        }
       } else {
         attachInterrupt(PROX_SENSOR1, Proximity1_ISR, FALLING);
         if (storedPubTimeDiffAlert == true) {
           attachInterrupt(PROX_SENSOR1, TIMEDIFF1_ISR, FALLING);
+        }
+        if (onSensorsTimeDiff == OUTPUT_ON) {
+          attachInterrupt(PROX_SENSOR1, TIMEDIFFOUT1_ISR, FALLING);
         }
       }
     }
@@ -208,10 +227,16 @@ void configInputOutput() {
         if (storedPubTimeDiffAlert == true) {
           attachInterrupt(PROX_SENSOR2, TIMEDIFF2_ISR, FALLING);
         }
+        if (onSensorsTimeDiff == OUTPUT_ON) {
+          attachInterrupt(PROX_SENSOR2, TIMEDIFFOUT2_ISR, FALLING);
+        }
       } else {
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, RISING);
         if (storedPubTimeDiffAlert == true) {
           attachInterrupt(PROX_SENSOR2, TIMEDIFF2_ISR, RISING);
+        }
+        if (onSensorsTimeDiff == OUTPUT_ON) {
+          attachInterrupt(PROX_SENSOR2, TIMEDIFFOUT2_ISR, RISING);
         }
       }
     } else {  //If NC Choosen
@@ -220,10 +245,16 @@ void configInputOutput() {
         if (storedPubTimeDiffAlert == true) {
           attachInterrupt(PROX_SENSOR2, TIMEDIFF2_ISR, RISING);
         }
+        if (onSensorsTimeDiff == OUTPUT_ON) {
+          attachInterrupt(PROX_SENSOR2, TIMEDIFFOUT2_ISR, RISING);
+        }
       } else {
         attachInterrupt(PROX_SENSOR2, Proximity2_ISR, FALLING);
         if (storedPubTimeDiffAlert == true) {
           attachInterrupt(PROX_SENSOR2, TIMEDIFF2_ISR, FALLING);
+        }
+        if (onSensorsTimeDiff == OUTPUT_ON) {
+          attachInterrupt(PROX_SENSOR2, TIMEDIFFOUT2_ISR, FALLING);
         }
       }
     }
@@ -365,6 +396,7 @@ void timeDiffAlertBetweenSensors() {
 void sensorTriggerOutputOn() {
   static bool outActiveOnTrigger = false;
   static unsigned long outTimeOn1SensorTrig = 0;
+ 
   if (objectDetectedSensor1 == true || objectDetectedSensor2 == true) {
     outTimeOn1SensorTrig = millis();
     objectDetectedSensor1 = false;
@@ -412,13 +444,17 @@ void sensor2AcceptableTime() {
   static bool outStateSensor2 = false;
   static unsigned long timeDifferenceSensor2 = 0;
   outTimeSensor2 = millis();
+  Serial.println(outTimeSensor2);
   if (objectDetectedSensor2 == true) {
+    Serial.println("sensor1AcceptableTim*******************");
     lastOutTimeSensor2 = outTimeSensor2;
     objectDetectedSensor2 = false;
     digitalWrite(OUTPUT_PIN, LOW);
     outStateSensor2 = true;
   }
   timeDifferenceSensor2 = outTimeSensor2 - lastOutTimeSensor2;
+  //lastOutTimeSensor2=outTimeSensor2;
+  Serial.println(timeDifferenceSensor2);
   //Output On continuously when Time needed by sensor2 to detect something is beyond Time Gap Inputed by User
   if (timeDifferenceSensor2 > storedAcceptTimeSeconds * 1000UL) {
     if (outStateSensor2 == true) {
@@ -544,7 +580,6 @@ void onOffTimeSensor2() {
     } else if (currentStateSensor2 == true && lastState2 == false) {  //ON state (high)
       timeHigh2 = millis();
       timeOn2 = timeHigh2 - timeLow2;
-      ;
       String timeOnn2;
       timeOnn2 += "OnTime2 in mili seconds:" + String(timeOn2);
       mqttClient.publish("kinjal/esp32/ontime2", timeOnn2.c_str());

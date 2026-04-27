@@ -206,6 +206,10 @@ void loop() {
       TimeBetweenObject1();
     }
     sensor1IsrFlags();
+    if (outputOnAcceptTime == SENSOR1) {
+
+    sensor1AcceptableTime();}
+    
     sensor1Isr = false;
   }
   if (sensor2Isr == true) {
@@ -215,6 +219,8 @@ void loop() {
     } else if (pubTimeBwObject == BOTH_SENSORS) {
       TimeBetweenObject2();
     }
+    if (outputOnAcceptTime == SENSOR2) {
+    sensor2AcceptableTime();}
     sensor2Isr = false;
   }
 
@@ -224,13 +230,15 @@ void loop() {
   }
 
   //User Selection of Acceptable Time Sensor1, Acceptable Time sensor2, Reset Mode
-  if (storedAcceptTimeSelect == 1) {
-    sensor1AcceptableTime();
-  } else if (storedAcceptTimeSelect == 2) {
-    sensor2AcceptableTime();
-  } else if (storedAcceptTimeSelect == 3) {
-    outputOnReset();
-  }
+  // if (outputOnAcceptTime == SENSOR1) {
+  //   sensor1AcceptableTime();
+  // } else if (outputOnAcceptTime == SENSOR2) {
+  //   sensor2AcceptableTime();
+  // } else if (outputOnAcceptTime == RESET) {
+  //   outputOnReset();
+  // }
+
+
 
   //If User Want Ouput On For Seconds For Time Difference Between 2 Sensors
   if (onSensorsTimeDiff == OUTPUT_ON) {
