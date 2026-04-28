@@ -75,16 +75,16 @@ void webServerConfig() {
       uint8_t sensor2OnChoice = request->getParam("myGroup1", true)->value().toInt();
       bool sensor1NoNcChoice = (request->getParam("myGroup2", true)->value() == "1") ? true : false;
       bool sensor2NoNcChoice = (request->getParam("myGroup3", true)->value() == "1") ? true : false;
-      bool sensorShiftChoice = (request->getParam("Shifting", true)->value() == "1") ? true : false;              //from sensor1 to sensor2 or sensor2 to sensor1
-      bool proxiCounterOnChoice = (request->getParam("proxicounteronoff", true)->value() == "1") ? true : false;  // choise to wherether to publish sensor individual count i.e sensor1 : 1 , sensor2 :2..
-      bool proxiShiftCounterOnChoice = (request->getParam("Shiftcount", true)->value() == "1") ? true : false;
-      uint8_t sensorUserTimeDifference = request->getParam("seconds", true)->value().toInt();
+      bool sensorShiftChoice = (request->getParam("Shifting", true)->value() == "1") ? true : false;             
+      bool jsonCountOnChoice = (request->getParam("proxicounteronoff", true)->value() == "1") ? true : false;  
+      bool ShiftCountOnChoice = (request->getParam("Shiftcount", true)->value() == "1") ? true : false;
+      uint8_t inputTimeDifference = request->getParam("seconds", true)->value().toInt();
       bool outputOnChoice = (request->getParam("onoff", true)->value() == "1") ? true : false;
-      bool sensorIndividualTriggerOutputon = (request->getParam("outputtrig", true)->value() == "1") ? true : false;
-      bool sensorDifferenceAlertMqttPublish = (request->getParam("outputpublish", true)->value() == "1") ? true : false;
-      bool sensorDiffOutputAlerton = (request->getParam("outputalert", true)->value() == "1") ? true : false;
-      uint8_t sensorIndividualAcceptTimeSelect = request->getParam("individual", true)->value().toInt();
-      uint8_t sensorIndividualAcceptTimeInput = request->getParam("accepttime", true)->value().toInt();
+      bool sensorTriggerOutputOn = (request->getParam("outputtrig", true)->value() == "1") ? true : false;
+      bool sensorTimeDiffPublish = (request->getParam("outputpublish", true)->value() == "1") ? true : false;
+      bool sensorTimeDiffOutOn = (request->getParam("outputalert", true)->value() == "1") ? true : false;
+      uint8_t sensorAcceptTimeSelect = request->getParam("individual", true)->value().toInt();
+      uint8_t sensorAcceptTimeSeconds = request->getParam("accepttime", true)->value().toInt();
       uint8_t timeBetweenObject = request->getParam("objectdetect", true)->value().toInt();
       uint8_t sensorOnOffTime = request->getParam("onofftime", true)->value().toInt();
 
@@ -98,24 +98,24 @@ void webServerConfig() {
 
         //store in preference
         preferences.begin("sensor", false);
-        preferences.putString("InputSensor_1", inputSensor1Name);
-        preferences.putString("InputSensor_2", inputSensor2Name);
-        preferences.putBool("Sensor_1mode", sensor1Modew);
-        preferences.putBool("Sensor_2mode", sensor2Modew);
-        preferences.putBool("Sensor1onoff", sensor1OnChoice);
-        preferences.putInt("Sensor2onoff", sensor2OnChoice);
-        preferences.putBool("Sensor1nonc", sensor1NoNcChoice);
-        preferences.putBool("Sensor2nonc", sensor2NoNcChoice);
-        preferences.putBool("Sensorshift", sensorShiftChoice);
-        preferences.putBool("proxionoff", proxiCounterOnChoice);
-        preferences.putBool("Shiftcount", proxiShiftCounterOnChoice);
-        preferences.putInt("proxi_time", sensorUserTimeDifference);
-        preferences.putBool("Outputonoff", outputOnChoice);
-        preferences.putBool("outputtrig", sensorIndividualTriggerOutputon);
-        preferences.putBool("outputpublish", sensorDifferenceAlertMqttPublish);
-        preferences.putBool("outputalert", sensorDiffOutputAlerton);
-        preferences.putInt("individual", sensorIndividualAcceptTimeSelect);
-        preferences.putInt("accepttime", sensorIndividualAcceptTimeInput);
+        preferences.putString("sensor1Name", inputSensor1Name);
+        preferences.putString("sensor2Name", inputSensor2Name);
+        preferences.putBool("sensor1Mode", sensor1Modew);
+        preferences.putBool("sensor2Mode", sensor2Modew);
+        preferences.putBool("sensor1On", sensor1OnChoice);
+        preferences.putInt("sensor2On", sensor2OnChoice);
+        preferences.putBool("sensor1Type", sensor1NoNcChoice);
+        preferences.putBool("sensor2Type", sensor2NoNcChoice);
+        preferences.putBool("shiftChoice", sensorShiftChoice);
+        preferences.putBool("shiftCount", ShiftCountOnChoice);
+        preferences.putBool("jsonCountOn", jsonCountOnChoice);
+        preferences.putInt("inputTimeDiff", inputTimeDifference);
+        preferences.putBool("timeDiffPub", sensorTimeDiffPublish);
+        preferences.putBool("outputOn", outputOnChoice);
+        preferences.putBool("outputOnTrig", sensorTriggerOutputOn);
+        preferences.putBool("timeDiffOut", sensorTimeDiffOutOn);
+        preferences.putInt("acceptSelect", sensorAcceptTimeSelect);
+        preferences.putInt("acceptTime", sensorAcceptTimeSeconds);
         preferences.putInt("timeBwObject", timeBetweenObject);
         preferences.putInt("sensorOnOffTime", sensorOnOffTime);
         preferences.end();

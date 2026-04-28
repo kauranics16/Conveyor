@@ -101,12 +101,12 @@ outputInAcceptTime outputOnAcceptTime = OFF;
 
 
 // -- -- -- -- -Global variables-- -- -- --
-String storedSensor1Name;
-String storedSensor2Name;
-bool storedShiftCounterOn;
-bool storedJsonCounterOn;
-uint8_t storedSensorTimeDiffSeconds;
-bool storedPubTimeDiffAlert;  //User input if user want to Publish the Alert message on Mqtt or Not
+String storedSensor1Name;       //Sensor at Input1 Name i.e sensor1 Name
+String storedSensor2Name;       //Sensor at Input2 Name i.e sensor2 Name
+bool storedShiftCounterOn;      //Right and Left shift counter Choice
+bool storedJsonCounterOn;       //Sensors Individual counters in Json form Choice
+uint8_t storedTimeDiffSeconds;  //User Input of Acceptable time Difference of User
+bool storedPubTimeDiffAlert;    //Mqtt Publish Time Difference Between Sensors
 
 
 //Counters
@@ -117,25 +117,24 @@ volatile int32_t sensor2Count = 0;   //Sensor2 Count to Publish when needed
 volatile bool sensor1Shift = false;  //Sensor1 Detects Status for shift operation
 volatile bool sensor2Shift = false;  //Sensor2 Detects Status for shift operation
 
-//For timeDiffAlertBetweenSensors()
-volatile bool sensor1TriggeredAlert = false;  //Sensor1 Detects Status for Alert
-volatile bool sensor2TriggeredAlert = false;  //Sensor2 Detects Status for Alert
-unsigned long sensor1TimeTriggered = 0;       //Time in millis for timeDiffAlertBetweenSensors()
-unsigned long sensor2TimeTriggered = 0;       //Time in millis for timeDiffAlertBetweenSensors()
+//Time Difference Isr Variables
+volatile bool timeDiffIsrOut1 = false;  //Sensor1 Detects Status for Alert
+volatile bool timeDiffIsrOut2 = false;  //Sensor2 Detects Status for Alert
+unsigned long timeDiffIsrOutTime1 = 0;  //Time in millis when sensor detects
+unsigned long timeDiffIsrOutTime2 = 0;  //Time in millis when sensor detects
 
-//For acceptableTimeAlert()
-volatile bool sensor1MqttPub = false;  //sensor mqtt publish Alert message
-volatile bool sensor2MqttPub = false;  //sensor mqtt publish Alert message
-unsigned long sensor1TimeMqttPub = 0;  //sensor 1 time when triggered
-unsigned long sensor2TimeMqttPub = 0;  //sensor 2 time when triggered
+//For Mqtt Publish
+volatile bool timeDiffPubIsr1 = false;  //sensor mqtt publish Alert message
+volatile bool timeDiffPubIsr2 = false;  //sensor mqtt publish Alert message
+unsigned long timeDiffPubIsrTime1 = 0;  //sensor 1 time when triggered
+unsigned long timeDiffPubIsrTime2 = 0;  //sensor 2 time when triggered
 
-// Individual acceptable times of sensor1 and sensor2 and output integration Respectively
-uint8_t storedAcceptTimeSelect = 0;           //select for whom they want to enter acceptable time and want output ON sensor1,sensor2 or reset
-uint8_t storedAcceptTimeSeconds = 0;          // input from user the seconds they want for individual accept time
-unsigned long outTimeSensor1 = 0;             //for Acceptable time sensor1
-volatile bool objectDetectedSensor1 = false;  //object detected status
-unsigned long outTimeSensor2 = 0;             //for Acceptable time sensor2
-volatile bool objectDetectedSensor2 = false;  //object detected status
+//Individual acceptable times of sensor1 and sensor2 and output integration Respectively
+uint8_t storedAcceptTimeSeconds = 0;   // input from user the seconds they want for individual accept time
+unsigned long outTimeSensor1 = 0;      //for Acceptable time sensor1
+volatile bool acceptTimeIsr1 = false;  //object detected status
+unsigned long outTimeSensor2 = 0;      //for Acceptable time sensor2
+volatile bool acceptTimeIsr2 = false;  //object detected status
 
 //On and Off Cycle
 volatile bool currentStateSensor1;
@@ -143,12 +142,12 @@ volatile bool isStateChanged1 = false;
 volatile bool currentStateSensor2;
 volatile bool isStateChanged2 = false;
 
-//ISR Main flag to sother flaFlagsgs
+//ISR Main flags
 volatile bool sensor1Isr = false;
 volatile bool sensor2Isr = false;
 
-volatile bool waitingForReset = false;  // for reset output on function
-bool shouldRestartESP = false;          //used for esp restart input uis given through webserver
+volatile bool waitingForResetIsr = false;  // for reset output on function
+bool shouldRestartESP = false;             //used for esp restart input uis given through webserver
 
 
 // =============================================================
@@ -206,10 +205,6 @@ void loop() {
       TimeBetweenObject1();
     }
     sensor1IsrFlags();
-    if (outputOnAcceptTime == SENSOR1) {
-
-    sensor1AcceptableTime();}
-    
     sensor1Isr = false;
   }
   if (sensor2Isr == true) {
@@ -219,8 +214,6 @@ void loop() {
     } else if (pubTimeBwObject == BOTH_SENSORS) {
       TimeBetweenObject2();
     }
-    if (outputOnAcceptTime == SENSOR2) {
-    sensor2AcceptableTime();}
     sensor2Isr = false;
   }
 
@@ -230,14 +223,13 @@ void loop() {
   }
 
   //User Selection of Acceptable Time Sensor1, Acceptable Time sensor2, Reset Mode
-  // if (outputOnAcceptTime == SENSOR1) {
-  //   sensor1AcceptableTime();
-  // } else if (outputOnAcceptTime == SENSOR2) {
-  //   sensor2AcceptableTime();
-  // } else if (outputOnAcceptTime == RESET) {
-  //   outputOnReset();
-  // }
-
+  if (outputOnAcceptTime == SENSOR1) {
+    sensor1AcceptableTime();
+  } else if (outputOnAcceptTime == SENSOR2) {
+    sensor2AcceptableTime();
+  } else if (outputOnAcceptTime == RESET) {
+    outputOnReset();
+  }
 
 
   //If User Want Ouput On For Seconds For Time Difference Between 2 Sensors
